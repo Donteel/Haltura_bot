@@ -1,5 +1,5 @@
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardMarkup
 from aiogram import F
 from Utils.Keyboards import *
 from aiogram import Router
@@ -106,6 +106,9 @@ async def awaiting_post(message: Message,state:FSMContext):
     await state.set_state(NewPost.pending_confirmation)
 
 
-
-
+@user_router.message(F.text == '📜 Правила')
+async def start(message: Message):
+    await message.answer('Правила публикации постов!',
+                         reply_markup=btn_rules(r'https://telegra.ph/Pravila-dlya-reklamodatelej-12-20')
+                         )
 

@@ -17,7 +17,6 @@ def btn_home():
 
 def btn_links(links:list[str:str]):
     """
-
     :param links: list содержит кортежи (ссылка/administrator)
     :return: inline клавиатуру
     """
@@ -74,3 +73,8 @@ def btn_standby():
     keyboard.add(btn_1)
     keyboard.adjust(1)
     return keyboard.as_markup(resize_keyboard=True)
+
+
+def btn_rules(rules_link: str):
+    keyboard = InlineKeyboardBuilder()
+    btn_1 = InlineKeyboardButton(text='Читать...', url=rules_link)
