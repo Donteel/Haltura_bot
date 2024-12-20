@@ -78,6 +78,3 @@ def btn_standby():
 def btn_rules(rules_link: str):
     keyboard = InlineKeyboardBuilder()
     btn_1 = InlineKeyboardButton(text='Читать...', url=rules_link)
-    keyboard.add(btn_1)
-    keyboard.adjust(1)
-    return keyboard.as_markup()
