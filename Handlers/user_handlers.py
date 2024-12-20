@@ -21,7 +21,7 @@ async def start(message: Message,state: FSMContext):
     print(message.chat.id)
     await action_orm.create_user(tg_id=message.from_user.id,
                         username=message.from_user.username)
-    await message.reply('Добро пожаловать в Халтура бот,выбери действие.'
+    await message.answer('Добро пожаловать в Халтура бот,выбери действие.'
                         ,reply_markup=btn_home())
 
 
