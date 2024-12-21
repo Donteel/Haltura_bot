@@ -55,6 +55,7 @@ async def confirm_post(callback: CallbackQuery,state: FSMContext):
                                          message_id=callback.message.message_id,
                                          reply_markup=btn_plug())
     await action_orm.create_new_post(post_text=post,user_id=user_id,message_id=message_id)
+    await state.clear()
     await callback.answer()
 
 @admin_router.callback_query(F.data.regexp(r'admin_delete_\d+$'))
