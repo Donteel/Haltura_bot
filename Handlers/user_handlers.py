@@ -84,6 +84,7 @@ async def delete_post(message: Message,state:FSMContext):
                 await message.answer('Сообщение успешно деактивировано',
                                      reply_markup=btn_home()
                                      )
+                await state.clear()
 
             except TelegramBadRequest:
                 await message.answer('Сообщение уже деактивировано ранее',reply_markup=btn_home())
