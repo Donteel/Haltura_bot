@@ -11,10 +11,6 @@ from Utils.functions import get_admins
 
 user_router = Router()
 
-@user_router.message()
-async def handle_forwarded_message(message: Message):
-    chat_id = message.forward_from_chat.id  # Получаем chat_id пересланного сообщения
-    await message.answer(f"chat_id этой группы: {chat_id}")
 
 @user_router.message(Command('start'))
 async def start(message: Message,state: FSMContext):
