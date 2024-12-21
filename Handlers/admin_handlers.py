@@ -40,7 +40,7 @@ async def confirm_post(callback: CallbackQuery,state: FSMContext):
 
     # отправляем подтверждение пользователю
     await callback.bot.send_message(chat_id=user_id,text=f"<b>Ваш пост одобрен и успешно размещен!</b>\n"
-                                                         f"<b>Номер поста</b> - <i>{message_id} (он понадобится если вы захотите</i>"
+                                                         f"<b>Номер поста:</b> <i>{message_id} (он понадобится если вы захотите </i>"
                                                          f"<i>деактивировать вакансию.</i>)",reply_markup=btn_home())
 
     # Очищаем состояние пользователя
