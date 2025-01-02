@@ -20,8 +20,8 @@ async def get_admins(chat_id: int, bot: Bot) -> list[tuple[str, str]]:
 
     for admin in admins:
         if isinstance(admin, ChatMemberAdministrator):  # Проверяем, является ли участник администратором
-            username = admin.user.username if admin.user.username else "No username"
-            custom_title = admin.custom_title if admin.custom_title else "No title"
+            username = admin.user.username if admin.user.username else "Donteel"
+            custom_title = admin.custom_title if admin.custom_title else "Администратор"
             admin_info = (username, custom_title)  # username и статус администратора
             admin_list.append(admin_info)
 
