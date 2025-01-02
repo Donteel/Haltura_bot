@@ -7,20 +7,22 @@ from aiogram.types import ChatMemberAdministrator
 from Utils.config import storage
 
 
-async def get_admins(chat_id: int,bot:Bot) -> list[tuple[str,str]]:
+async def get_admins(chat_id: int, bot: Bot) -> list[tuple[str, str]]:
     try:
         admins = await bot.get_chat_administrators(chat_id)
-
     except TelegramMigrateToChat as e:
         # Получаем новый chat_id через migrate_to_chat_id
         new_chat_id = e.migrate_to_chat_id
         admins = await bot.get_chat_administrators(new_chat_id)
-        print(admins)
+        print(f"Admins moved to new chat: {admins}")
+
     admin_list = []
 
     for admin in admins:
         if isinstance(admin, ChatMemberAdministrator):  # Проверяем, является ли участник администратором
-            admin_info = (admin.user.username,admin.custom_title) # username и статус администратора
+            username = admin.user.username if admin.user.username else "No username"
+            custom_title = admin.custom_title if admin.custom_title else "No title"
+            admin_info = (username, custom_title)  # username и статус администратора
             admin_list.append(admin_info)
 
     return admin_list
