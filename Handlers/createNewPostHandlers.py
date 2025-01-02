@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 create_post_router = Router()
 
 @create_post_router.message(~F.text)
-async def type_message_error(message: Message,state: FSMContext):
+async def type_message_error(message: Message):
     await message.answer('Я понимаю только текст!')
 
 
@@ -29,7 +29,7 @@ async def start_creating(message: Message,state: FSMContext):
 @create_post_router.message(NewPost.place)
 async def awaiting_place(message: Message,state: FSMContext):
     await state.update_data(place=message.text)
-    await message.answer('<i>Укажите срочность, например: Срочно!</i>')
+    await message.answer('<i>Укажите срочность, например: Завтра</i>')
     await state.set_state(NewPost.data_time)
 
 
@@ -100,9 +100,12 @@ async def awaiting_contacts(message: Message,state: FSMContext):
 @create_post_router.message(NewPost.pending_confirmation,F.text == "✅ Подтвердить")
 async def awaiting_pending_confirmation(message: Message,state: FSMContext):
     data = await state.get_data()
-    if post_id := await action_orm.create_temp_post(data['post'],message.from_user.id):
+    if post_id := await action_orm.create_temp_post(post_text=data['post'],
+                                                    user_id=message.from_user.id,
+                                                    username=message.from_user.username):
         await message.bot.send_message(chat_id=application_group,
-                                       text=data['post'],
+                                       text=f"{data['post']}\n"
+                                            f"Отправитель - {message.from_user.username}",
                                        reply_markup=btn_admin_confirm(post_id))
         await message.answer('Ваш пост отправлен на проверку,ожидайте обновлений',
                              reply_markup=btn_standby()

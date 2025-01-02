@@ -1,10 +1,11 @@
 import logging
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func, and_, Row
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
 from DataBase.BaseModel import UserModel, engine, TempPostModel, PostModel
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError, NoResultFound
+
+
 AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 class ActionModel:
@@ -20,9 +21,11 @@ class ActionModel:
             try:
                 session.add(user)
                 await session.commit()
+                return True
             except IntegrityError as e:
                 logging.error(e)
                 await session.rollback()
+                return False
 
 
     async def create_new_post(self,post_text,user_id,message_id):
@@ -59,11 +62,13 @@ class ActionModel:
             await session.commit()
             return result
 
-    async def create_temp_post(self,post_text,user_id):
+    async def create_temp_post(self,post_text,user_id,username):
         async with self.session_factory() as session:
-            temp_post = TempPostModel()
-            temp_post.post_text = post_text
-            temp_post.user_id = user_id
+            temp_post = TempPostModel(post_text= post_text,
+                                      user_id= user_id,
+                                      username= username
+                                      )
+
             try:
                 session.add(temp_post)
                 await session.commit()
@@ -77,7 +82,7 @@ class ActionModel:
         async with self.session_factory() as session:
             stmt = await session.execute(select(TempPostModel).where(TempPostModel.id == post_id))
             if data := stmt.scalars().first():
-                return {'post_text':data.post_text,'user_id':data.user_id,'id':data.id}
+                return {'post_text':data.post_text,'user_id':data.user_id,'id':data.id,'username':data.username}
             return None
 
     async def remove_temp_post(self,post_id):

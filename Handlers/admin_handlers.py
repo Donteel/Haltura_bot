@@ -2,13 +2,13 @@ from aiogram.exceptions import TelegramMigrateToChat
 from aiogram.types import Message, CallbackQuery
 from aiogram import F
 from sqlalchemy.testing.plugin.plugin_base import logging
-
 from Utils.Keyboards import *
 from aiogram import Router
 from Utils.StateModel import AdminState
 from Utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
 from Utils.functions import state_for_user
+
 
 admin_router = Router()
 
@@ -19,9 +19,11 @@ async def confirm_post(callback: CallbackQuery,state: FSMContext):
 
     # Получаем нужные данные
     temp_post_id = callback.data.split('_')[-1] # ID Поста
-    temp_data: dict = await action_orm.get_temp_post(temp_post_id) #
+    temp_data: dict = await action_orm.get_temp_post(temp_post_id)
     post = temp_data['post_text'] # текст поста
     user_id = temp_data['user_id'] #user_id поста
+    username = temp_data['username']
+
 
     try:
         # Отправляем сообщение в канал
@@ -50,6 +52,8 @@ async def confirm_post(callback: CallbackQuery,state: FSMContext):
     await action_orm.remove_temp_post(temp_post_id)
 
     await callback.bot.edit_message_text(f"{post}\n"
+                                         f"\n"
+                                         f"Отправитель {username}\n"
                                          f"<b>Пост опубликован!</b>",
                                          chat_id=callback.message.chat.id,
                                          message_id=callback.message.message_id,
@@ -57,9 +61,21 @@ async def confirm_post(callback: CallbackQuery,state: FSMContext):
     await action_orm.create_new_post(post_text=post,user_id=user_id,message_id=message_id)
     await callback.answer()
 
+
 @admin_router.callback_query(F.data.regexp(r'admin_delete_\d+$'))
 async def delete_temp_post(callback: CallbackQuery,state: FSMContext):
-    await callback.bot.edit_message_text(f"<b>Пост удален</b>",
+
+    # Получаем нужные данные
+    temp_post_id = callback.data.split('_')[-1]  # ID Поста
+    temp_data: dict = await action_orm.get_temp_post(temp_post_id)
+    post = temp_data['post_text']  # текст поста
+    username = temp_data['username']
+
+
+    await callback.bot.edit_message_text(f"{post}\n"
+                                         f"\n"
+                                         f"Отправитель- {username}\n"
+                                         f"<b>Пост удален</b>",
                                          chat_id=callback.message.chat.id,
                                          message_id=callback.message.message_id,
                                          reply_markup=btn_plug()
@@ -90,7 +106,7 @@ async def remove_temp_post(message:Message, state: FSMContext):
                                    reply_markup=btn_home())
 
     # отправляем пользователю в ответ подтверждение
-    await message.reply('<b>Пост удален,причина отправлена пользователю</i>')
+    await message.reply('<b>Пост удален,причина отправлена пользователю</b>')
     state_context = await state_for_user(user_id=post_data['user_id'], chat_id=post_data['user_id'])
     await state_context.clear()
 

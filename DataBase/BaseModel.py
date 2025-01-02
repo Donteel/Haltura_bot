@@ -1,6 +1,5 @@
 import datetime
 import os
-from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncAttrs, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column, relationship,DeclarativeBase
 from sqlalchemy import ForeignKey, func, BigInteger, UniqueConstraint
@@ -27,6 +26,7 @@ class UserModel(AbstractModel):
 class TempPostModel(AbstractModel):
     __tablename__ = 'temp_post'
     user_id:Mapped[int] = mapped_column(ForeignKey(UserModel.user_id,ondelete='CASCADE'),nullable=False)
+    username:Mapped[str] = mapped_column(nullable=True)
     post_text: Mapped[str] = mapped_column(nullable=False)
 
 class PostModel(AbstractModel):

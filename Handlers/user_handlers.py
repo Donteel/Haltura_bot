@@ -1,6 +1,10 @@
+import logging
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, InlineKeyboardMarkup
 from aiogram import F
+
+from MiddleWares.PendingConfirmaionMiddleWares import CheckPendingConfirmMiddleware
+from MiddleWares.SpamProtections import SpamProtected
 from Utils.Keyboards import *
 from aiogram import Router
 from aiogram.filters import Command
@@ -10,17 +14,22 @@ from aiogram.fsm.context import FSMContext
 from Utils.functions import get_admins
 
 user_router = Router()
+user_router.message.middleware(SpamProtected(rate_limit=1))
+user_router.message.middleware(CheckPendingConfirmMiddleware())
 
+# @user_router.message()
+# async def start(message):
+#     print(message.chat.id)
 
 @user_router.message(Command('start'))
 async def start(message: Message,state: FSMContext):
-    if await state.get_state() == NewPost.pending_confirmation:
-        await message.answer('<b>Все действия заблокированы!</b>'
-                             '<b>Дождитесь проверки публикации!</b>',reply_markup=btn_standby())
-        return
-    print(message.chat.id)
-    await action_orm.create_user(tg_id=message.from_user.id,
-                        username=message.from_user.username)
+
+    if await action_orm.create_user(tg_id=message.from_user.id,
+                            username=message.from_user.username):
+        logging.info('Пользователь добавлен в базу')
+    else:
+        logging.info('Пользователь уже есть в базе')
+
     await message.answer('Добро пожаловать в Халтура бот,выбери действие.'
                         ,reply_markup=btn_home())
 
@@ -42,20 +51,15 @@ async def start(message: Message):
 
 @user_router.message(F.text == '📢 Опубликовать готовый пост')
 async def create_post(message: Message,state:FSMContext):
-    if await state.get_state() == NewPost.pending_confirmation:
-        await message.answer('<b>Все действия заблокированы!</b>'
-                             '<b>Дождитесь проверки публикации!</b>',reply_markup=btn_standby())
-        return
+
     await message.answer('Пришли мне готовый пост!',reply_markup=btn_cancel())
+    await state.update_data(username=message.from_user.username)
     await state.set_state(NewPost.awaiting_finished_post)
 
 
 @user_router.message(F.text == '❌ Закрыть пост')
 async def create_post(message: Message,state:FSMContext):
-    if await state.get_state() == NewPost.pending_confirmation:
-        await message.answer('<b>Все действия заблокированы!</b>'
-                             '<b>Дождитесь проверки публикации!</b>',reply_markup=btn_standby())
-        return
+
     await message.answer('Введите ID сообщение полученное при публикации',reply_markup=btn_cancel())
     await state.set_state(DeletePostState.waiting_post_id)
 
@@ -97,13 +101,22 @@ async def delete_post(message: Message,state:FSMContext):
 @user_router.message(NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message,state:FSMContext):
     post = message.text
-    post_id = await action_orm.create_temp_post(user_id=message.from_user.id,post_text=post)
+
+    post_id = await action_orm.create_temp_post(user_id=message.from_user.id,
+                                                post_text=post,
+                                                username=message.from_user.username
+                                                )
+
     await message.bot.send_message(chat_id=application_group,
-                                   text=post,
+                                   text=f'{post}\n'
+                                        f'\n'
+                                        f'Отправитель - {message.from_user.username}',
                                    reply_markup=btn_admin_confirm(post_id))
+
     await message.answer('Ваш пост отправлен на проверку,ожидайте обновлений',
                          reply_markup=btn_standby()
                          )
+
     await state.set_state(NewPost.pending_confirmation)
 
 
