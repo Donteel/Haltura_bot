@@ -1,8 +1,10 @@
 import logging
+from typing import Sequence
+
 from sqlalchemy import func, and_, Row
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
-from DataBase.BaseModel import UserModel, engine, TempPostModel, PostModel
+from DataBase.BaseModel import UserModel, engine, TempPostModel, PostModel, AdminModel
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError, NoResultFound
 
 
@@ -16,7 +18,7 @@ class ActionModel:
     async def create_user(self,tg_id,username):
         async with self.session_factory() as session:
             user = UserModel()
-            user.user_id = tg_id
+            user.id = tg_id
             user.username = username
             try:
                 session.add(user)
@@ -42,6 +44,13 @@ class ActionModel:
                 logging.error(e)
                 await session.rollback()
 
+
+    async def get_admins(self) -> Sequence[Row[tuple[str, str]]]:
+        async with self.session_factory() as session:
+            admins = await session.execute(select(AdminModel.user_name,AdminModel.admin_role))
+            result = admins.fetchall()
+            return result
+
     async def get_post(self,message_id,user_id):
         async with self.session_factory() as session:
             stmt = await session.execute(select(PostModel).where(and_(PostModel.message_id == message_id,PostModel.user_id == user_id)))
@@ -62,6 +71,7 @@ class ActionModel:
             result.status = False
             await session.commit()
             return result
+
 
     async def create_temp_post(self,post_text,user_id,username):
         async with self.session_factory() as session:
@@ -85,6 +95,7 @@ class ActionModel:
             if data := stmt.scalars().first():
                 return {'post_text':data.post_text,'user_id':data.user_id,'id':data.id,'username':data.username}
             return None
+
 
     async def remove_temp_post(self,post_id):
         async with self.session_factory() as session:

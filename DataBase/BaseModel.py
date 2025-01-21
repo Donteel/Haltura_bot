@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncAttrs
 from sqlalchemy.orm import Mapped, mapped_column, relationship,DeclarativeBase
 from sqlalchemy import ForeignKey, func, BigInteger, UniqueConstraint
 
-engine = create_async_engine('sqlite+aiosqlite:///haltura_base.db',echo=True)
+engine = create_async_engine('sqlite+aiosqlite:///haltura_base.db',echo=True) # noqa
 # Настройка движка и фабрики сессий
 AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -16,30 +16,39 @@ class AbstractModel(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(server_default=func.now())
 
 class UserModel(AbstractModel):
-    __tablename__ = 'users'
+    __tablename__ = 'users' # noqa
 
-    user_id:Mapped[int] = mapped_column(nullable=False,unique=True)
+    id = mapped_column(BigInteger,nullable=False,unique=True,primary_key=True)
     username: Mapped[str] = mapped_column(nullable=True)
 
 
 class TempPostModel(AbstractModel):
-    __tablename__ = 'temp_post'
-    user_id:Mapped[int] = mapped_column(ForeignKey(UserModel.user_id,ondelete='CASCADE'),nullable=False)
+    __tablename__ = 'temp_post' # noqa
+    user_id:Mapped[int] = mapped_column(ForeignKey(UserModel.id,ondelete='CASCADE'),nullable=False)
     username:Mapped[str] = mapped_column(nullable=True)
     post_text: Mapped[str] = mapped_column(nullable=False)
 
 class PostModel(AbstractModel):
-    __tablename__ = 'post'
+    __tablename__ = 'post'  # noqa
 
-    user_id: Mapped[int] = mapped_column(ForeignKey(UserModel.user_id, ondelete='CASCADE'))
+    user_id: Mapped[int] = mapped_column(ForeignKey(UserModel.id, ondelete='CASCADE'))
     post_text: Mapped[str] = mapped_column(nullable=False)
     message_id:Mapped[int] = mapped_column(nullable=False)
     status: Mapped[bool] = mapped_column(nullable=False,default=True)
 
 
 class BlackListModel(AbstractModel):
-    __tablename__ = 'blacklist'
-    user_id:Mapped[int] = mapped_column(ForeignKey(UserModel.user_id, ondelete='CASCADE'))
+    __tablename__ = 'blacklist' # noqa
+    user_id:Mapped[int] = mapped_column(ForeignKey(UserModel.id, ondelete='CASCADE'))
+
+class AdminModel(AbstractModel):
+
+    __tablename__ = 'admin' # noqa
+    id = mapped_column(BigInteger,nullable=False,unique=True,primary_key=True)
+    user_name:Mapped[str] = mapped_column(nullable=False)
+    admin_role: Mapped[str] = mapped_column(nullable=False)
+
+
 
 
 async def create_tables():

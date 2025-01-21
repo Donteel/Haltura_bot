@@ -24,8 +24,9 @@ user_router.message.middleware(CheckPendingConfirmMiddleware())
 @user_router.message(Command('start'))
 async def start(message: Message,state: FSMContext):
 
-    if await action_orm.create_user(tg_id=message.from_user.id,
-                            username=message.from_user.username):
+    if await action_orm.create_user(
+            tg_id=message.from_user.id,
+            username=message.from_user.username):
         logging.info('Пользователь добавлен в базу')
     else:
         logging.info('Пользователь уже есть в базе')
@@ -42,10 +43,8 @@ async def start(message: Message,state: FSMContext):
 
 @user_router.message(Command('help'))
 async def start(message: Message):
-    await message.reply('Можешь связаться с администратором',
-                        reply_markup=btn_links(
-                            await get_admins(main_chat)
-                        )
+    await message.reply('Можешь связаться с нужным тебе администратором',
+                        reply_markup=btn_links(links=await action_orm.get_admins())
                         )
 
 

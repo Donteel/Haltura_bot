@@ -21,7 +21,7 @@ def btn_links(links:list[str:str]):
     :return: inline клавиатуру
     """
     keyboard = InlineKeyboardBuilder()
-    keyboard.add(*[InlineKeyboardButton(text=name,url=f't.me/{link}') for link, name in links])
+    keyboard.add(*[InlineKeyboardButton(text=f'⛑ {name}',url=f't.me/{link}') for link, name in links])
     keyboard.adjust(1)
     return keyboard.as_markup(resize_keyboard=True)
 
