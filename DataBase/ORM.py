@@ -52,6 +52,7 @@ class ActionModel:
 
     async def post_deactivate(self,message_id,user_id):
         async with self.session_factory() as session:
+
             post = await session.execute(
                 select(PostModel).where(and_(
                     PostModel.message_id == message_id,PostModel.user_id == user_id)

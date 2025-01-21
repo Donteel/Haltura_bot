@@ -4,7 +4,7 @@ from aiogram.types import TelegramObject, Message
 from aiogram import BaseMiddleware
 from Utils.StateModel import NewPost
 from Utils.config import storage
-from Utils.functions import state_for_user
+from Utils.other import state_for_user
 
 
 class CheckPendingConfirmMiddleware(BaseMiddleware):

@@ -1,13 +1,15 @@
+import logging
 from aiogram import Bot
 from aiogram.exceptions import TelegramMigrateToChat
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
-from aiogram.types import ChatMemberAdministrator
+from aiogram.types import ChatMemberAdministrator, InlineKeyboardMarkup, InlineKeyboardButton
 
-from Utils.config import storage
+from Utils.bot_instance import bot
+from Utils.config import storage, main_chat
 
 
-async def get_admins(chat_id: int, bot: Bot) -> list[tuple[str, str]]:
+async def get_admins(chat_id: int) -> list[tuple[str, str]]:
     try:
         admins = await bot.get_chat_administrators(chat_id)
     except TelegramMigrateToChat as e:
@@ -33,3 +35,21 @@ async def state_for_user(user_id: int, chat_id: int) -> FSMContext:
     key = StorageKey(chat_id=chat_id,user_id=user_id,bot_id=7926311537)
     context = FSMContext(storage=storage, key=key)
     return context
+
+
+# функция для публикации сообщения с привлечением HR
+async def MessageForHr():
+    try:
+        await bot.send_message(
+            text='<b>💼 Ищете сотрудников?</b>\n'
+                    'Вы можете опубликовать свою вакансию абсолютно'
+                    ' бесплатно через нашего Telegram-бота! 🎯',
+            chat_id=int(main_chat),
+            reply_markup=
+            InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text='Опубликовать 🔰',url='t.me/Haltura98_bot')]
+            ]
+            )
+        )
+    except Exception as e:
+        logging.error(e)

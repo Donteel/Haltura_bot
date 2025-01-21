@@ -7,7 +7,7 @@ from aiogram import Router
 from Utils.StateModel import AdminState
 from Utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
-from Utils.functions import state_for_user
+from Utils.other import state_for_user
 
 
 admin_router = Router()

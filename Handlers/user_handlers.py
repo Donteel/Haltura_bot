@@ -11,7 +11,7 @@ from aiogram.filters import Command
 from Utils.StateModel import NewPost, DeletePostState
 from Utils.config import action_orm, main_chat, application_group
 from aiogram.fsm.context import FSMContext
-from Utils.functions import get_admins
+from Utils.other import get_admins, MessageForHr
 
 user_router = Router()
 user_router.message.middleware(SpamProtected(rate_limit=1))
@@ -44,7 +44,7 @@ async def start(message: Message,state: FSMContext):
 async def start(message: Message):
     await message.reply('Можешь связаться с администратором',
                         reply_markup=btn_links(
-                            await get_admins(main_chat,message.bot)
+                            await get_admins(main_chat)
                         )
                         )
 

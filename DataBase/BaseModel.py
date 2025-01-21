@@ -1,5 +1,4 @@
 import datetime
-import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncAttrs, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column, relationship,DeclarativeBase
 from sqlalchemy import ForeignKey, func, BigInteger, UniqueConstraint

@@ -1,0 +1,20 @@
+from apscheduler.executors.pool import ThreadPoolExecutor
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
+from Utils.other import MessageForHr
+
+
+job_stories = {
+    'default': SQLAlchemyJobStore(url='sqlite:///jobs.db'),
+}
+
+executor = {
+    'default': ThreadPoolExecutor(max_workers=10)
+}
+
+scheduler = AsyncIOScheduler(job_stories=job_stories, executor=executor)
+
+
+# Задача для публикации сообщения о возможности публиковать сообщения с помощью бота
+scheduler.add_job(MessageForHr, CronTrigger(hour='9,20'))

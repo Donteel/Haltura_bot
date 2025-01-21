@@ -1,22 +1,19 @@
-from aiogram import Bot, Dispatcher
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
 from Handlers import user_handlers, createNewPostHandlers, admin_handlers
 from DataBase.BaseModel import create_tables
-from Utils.config import bot_token
+from Utils.ScheduleTasks import scheduler
+from Utils.bot_instance import dp, bot
 import asyncio
 import logging
-from Utils.config import storage
-
 
 
 async def main():
-    dp = Dispatcher(storage=storage)
-    bot=Bot(token=bot_token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
     dp.include_router(user_handlers.user_router)
     dp.include_router(admin_handlers.admin_router)
     dp.include_router(createNewPostHandlers.create_post_router)
     await create_tables()
+    scheduler.start()
+
     try:
         logging.info('все таблицы созданы')
         await bot.delete_webhook(drop_pending_updates=True)
