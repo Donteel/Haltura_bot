@@ -9,9 +9,9 @@ from Utils.Keyboards import *
 from aiogram import Router
 from aiogram.filters import Command
 from Utils.StateModel import NewPost, DeletePostState
-from Utils.config import action_orm, main_chat, application_group
+from Utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
-from Utils.other import get_admins, MessageForHr
+from Utils.other import request_sender
 
 user_router = Router()
 user_router.message.middleware(SpamProtected(rate_limit=1))
@@ -106,11 +106,14 @@ async def awaiting_post(message: Message,state:FSMContext):
                                                 username=message.from_user.username
                                                 )
 
-    await message.bot.send_message(chat_id=application_group,
-                                   text=f'{post}\n'
-                                        f'\n'
-                                        f'Отправитель - {message.from_user.username}',
-                                   reply_markup=btn_admin_confirm(post_id))
+    admin_data:list[int] = await action_orm.get_admins_id()
+
+
+    await request_sender(admin_data=admin_data,
+                         post_text=message.text,
+                         username=message.from_user.username,
+                         post_id=post_id
+                         )
 
     await message.answer('Ваш пост отправлен на проверку,ожидайте обновлений',
                          reply_markup=btn_standby()

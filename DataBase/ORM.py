@@ -51,6 +51,12 @@ class ActionModel:
             result = admins.fetchall()
             return result
 
+    async def get_admins_id(self) -> list[int]:
+        async with self.session_factory() as session:
+            stmt = await session.execute(select(AdminModel.id))
+            result = stmt.scalars().all()
+            return [admin_id for admin_id in result]
+
     async def get_post(self,message_id,user_id):
         async with self.session_factory() as session:
             stmt = await session.execute(select(PostModel).where(and_(PostModel.message_id == message_id,PostModel.user_id == user_id)))
@@ -100,8 +106,11 @@ class ActionModel:
     async def remove_temp_post(self,post_id):
         async with self.session_factory() as session:
             stmt = await session.execute(select(TempPostModel).where(TempPostModel.id == post_id))
-            await session.delete(stmt.scalars().first())
-            await session.commit()
-            return True
+            if stmt.scalars().first():
+                await session.delete(stmt.scalars().first())
+                await session.commit()
+                return True
+            else:
+                return False
 
 

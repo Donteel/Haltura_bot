@@ -2,9 +2,12 @@ from aiogram.types import Message
 from aiogram import F
 from Utils.Keyboards import *
 from aiogram import Router
-from Utils.StateModel import NewPost
+from Utils.StateModel import NewPost, AdminState
 from Utils.config import action_orm, main_chat, application_group
 from aiogram.fsm.context import FSMContext
+
+from Utils.other import state_for_user, request_sender
+
 create_post_router = Router()
 
 @create_post_router.message(~F.text)
@@ -100,13 +103,18 @@ async def awaiting_contacts(message: Message,state: FSMContext):
 @create_post_router.message(NewPost.pending_confirmation,F.text == "✅ Подтвердить")
 async def awaiting_pending_confirmation(message: Message,state: FSMContext):
     data = await state.get_data()
+    admin_data: list[int] = await action_orm.get_admins_id()
+
     if post_id := await action_orm.create_temp_post(post_text=data['post'],
                                                     user_id=message.from_user.id,
                                                     username=message.from_user.username):
-        await message.bot.send_message(chat_id=application_group,
-                                       text=f"{data['post']}\n"
-                                            f"Отправитель - {message.from_user.username}",
-                                       reply_markup=btn_admin_confirm(post_id))
+        await request_sender(
+            admin_data=admin_data,
+            post_text=data['post'],
+            username=message.from_user.username,
+            post_id=post_id
+        )
+
         await message.answer('Ваш пост отправлен на проверку,ожидайте обновлений',
                              reply_markup=btn_standby()
                              )

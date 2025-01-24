@@ -1,7 +1,7 @@
 import datetime
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncAttrs, async_sessionmaker
-from sqlalchemy.orm import Mapped, mapped_column, relationship,DeclarativeBase
-from sqlalchemy import ForeignKey, func, BigInteger, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
+from sqlalchemy import ForeignKey, func, BigInteger
 
 engine = create_async_engine('sqlite+aiosqlite:///haltura_base.db',echo=True) # noqa
 # Настройка движка и фабрики сессий

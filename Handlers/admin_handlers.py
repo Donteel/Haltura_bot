@@ -7,14 +7,13 @@ from aiogram import Router
 from Utils.StateModel import AdminState
 from Utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
-from Utils.other import state_for_user
-
+from Utils.other import state_for_user, clearing_of_all_states
 
 admin_router = Router()
 
 
 
-@admin_router.callback_query(F.data.regexp(r'admin_confirm_\d+$'))
+@admin_router.callback_query(F.data.regexp(r'admin_confirm_\d+$'),AdminState.waiting_action)
 async def confirm_post(callback: CallbackQuery,state: FSMContext):
 
     # Получаем нужные данные
@@ -25,8 +24,8 @@ async def confirm_post(callback: CallbackQuery,state: FSMContext):
     username = temp_data['username']
 
 
+    # Отправляем сообщение в канал
     try:
-        # Отправляем сообщение в канал
         message_object = await callback.bot.send_message(chat_id=main_chat, text=post)
         chat_id = main_chat
     except TelegramMigrateToChat as e:
@@ -49,20 +48,38 @@ async def confirm_post(callback: CallbackQuery,state: FSMContext):
     state_context = await state_for_user(user_id=user_id, chat_id=user_id)
     await state_context.clear()
 
+
+    admins_data = await action_orm.get_admins_id()
+
+    # удаляем временные данные о посте
     await action_orm.remove_temp_post(temp_post_id)
 
-    await callback.bot.edit_message_text(f"{post}\n"
-                                         f"\n"
-                                         f"Отправитель {username}\n"
-                                         f"<b>Пост опубликован!</b>",
-                                         chat_id=callback.message.chat.id,
-                                         message_id=callback.message.message_id,
-                                         reply_markup=btn_plug())
+    # Изменение всех сообщений у админов если кто-то из них ответил на заявку
+    for admin_id in  admins_data:
+        # получаем объект state администратора
+        local_state= await state_for_user(admin_id,admin_id)
+
+        # получаем id сообщения которое нужно изменить
+        admin_data=await local_state.get_data()
+
+        # Меняем сообщение
+        await callback.bot.edit_message_text(f"{post}\n"
+                                             f"\n"
+                                             f"Отправитель {username}\n"
+                                             f"<b>Пост опубликован!</b>",
+                                             chat_id=admin_id,
+                                             message_id=admin_data['message_id'],
+                                             reply_markup=btn_plug())
+
+        # Сбрасываем состояние для администратора
+        await local_state.clear()
+
     await action_orm.create_new_post(post_text=post,user_id=user_id,message_id=message_id)
+
     await callback.answer()
 
 
-@admin_router.callback_query(F.data.regexp(r'admin_delete_\d+$'))
+@admin_router.callback_query(F.data.regexp(r'admin_delete_\d+$'),AdminState.waiting_action)
 async def delete_temp_post(callback: CallbackQuery,state: FSMContext):
 
     # Получаем нужные данные
@@ -71,15 +88,21 @@ async def delete_temp_post(callback: CallbackQuery,state: FSMContext):
     post = temp_data['post_text']  # текст поста
     username = temp_data['username']
 
+    admin_data: list[int] = await action_orm.get_admins_id()
+    for admin_id in admin_data:
 
-    await callback.bot.edit_message_text(f"{post}\n"
-                                         f"\n"
-                                         f"Отправитель- {username}\n"
-                                         f"<b>Пост удален</b>",
-                                         chat_id=callback.message.chat.id,
-                                         message_id=callback.message.message_id,
-                                         reply_markup=btn_plug()
-                                         )
+        local_state= await state_for_user(admin_id,admin_id)
+        data=await local_state.get_data()
+        await callback.bot.edit_message_text(f"{post}\n"
+                                             f"\n"
+                                             f"Отправитель- {username}\n"
+                                             f"<b>Пост удален</b>",
+                                             chat_id=admin_id,
+                                             message_id=data['message_id'],
+                                             reply_markup=btn_plug()
+                                             )
+
+
     await callback.message.answer('<b>Укажите причину удаления</b>')
     await state.set_state(AdminState.waiting_for_reason)
     await state.update_data(post_id=callback.data.split('_')[-1])
