@@ -3,6 +3,9 @@ from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from Utils.other import MessageForHr
+import zoneinfo
+
+time_zone = zoneinfo.ZoneInfo('Europa/Moscow')
 
 
 job_stories = {
@@ -17,4 +20,4 @@ scheduler = AsyncIOScheduler(job_stories=job_stories, executor=executor)
 
 
 # Задача для публикации сообщения о возможности публиковать сообщения с помощью бота
-scheduler.add_job(MessageForHr, CronTrigger(hour='9,20'))
+scheduler.add_job(MessageForHr, CronTrigger(hour='8,17',timezone=time_zone))
