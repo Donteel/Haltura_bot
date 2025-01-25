@@ -5,7 +5,7 @@ from apscheduler.triggers.cron import CronTrigger
 from Utils.other import MessageForHr
 import zoneinfo
 
-time_zone = zoneinfo.ZoneInfo('Europa/Moscow')
+time_zone = zoneinfo.ZoneInfo('Europe/Moscow')
 
 
 job_stories = {
