@@ -106,8 +106,9 @@ class ActionModel:
     async def remove_temp_post(self,post_id):
         async with self.session_factory() as session:
             stmt = await session.execute(select(TempPostModel).where(TempPostModel.id == post_id))
-            if stmt.scalars().first():
-                await session.delete(stmt.scalars().first())
+            result = stmt.scalars().first()
+            if result:
+                await session.delete(result)
                 await session.commit()
                 return True
             else:
