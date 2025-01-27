@@ -1,5 +1,8 @@
 from dotenv import load_dotenv
 import os
+
+from redis import Redis
+
 from DataBase.ORM import ActionModel
 from aiogram.fsm.storage.redis import RedisStorage
 
@@ -10,3 +13,4 @@ bot_token = os.getenv('BOT_TOKEN')
 main_chat = os.getenv('CHAT_ID')
 application_group = os.getenv('APPLICATION_GROUP')
 action_orm = ActionModel()
+r = Redis.from_url('redis://localhost:6379/15')

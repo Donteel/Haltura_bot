@@ -21,3 +21,4 @@ scheduler = AsyncIOScheduler(job_stories=job_stories, executor=executor)
 
 # Задача для публикации сообщения о возможности публиковать сообщения с помощью бота
 scheduler.add_job(MessageForHr, CronTrigger(hour='8,17',timezone=time_zone))
+# scheduler.add_job(MessageForHr, CronTrigger(minute='28,29',timezone=time_zone))
