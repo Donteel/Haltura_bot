@@ -96,6 +96,11 @@ class ActionModel:
 
 
     async def get_temp_post(self,post_id):
+        """
+        Метод возвращает словарь, доступные ключи : post_text:str, user_id:int, id:int, username:str
+        :param post_id: ID вакансии в временной базе данных
+        :return: None
+        """
         async with self.session_factory() as session:
             stmt = await session.execute(select(TempPostModel).where(TempPostModel.id == post_id))
             if data := stmt.scalars().first():

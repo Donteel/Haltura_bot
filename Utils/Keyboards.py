@@ -10,6 +10,8 @@ def btn_home():
     btn_2 = KeyboardButton(text='📝 Создать пост по шаблону')
     btn_3 = KeyboardButton(text='❌ Закрыть пост')
     btn_4 = KeyboardButton(text='📜 Правила')
+
+
     keyboard.add(btn_1, btn_2, btn_3, btn_4)
 
     keyboard.adjust(1)
@@ -52,8 +54,8 @@ def btn_cancel():
 def btn_admin_confirm(post_id):
     keyboard = InlineKeyboardBuilder()
 
-    btn_1 = InlineKeyboardButton(text="Пропустить 📤", callback_data=f"admin_confirm_{post_id}")
-    btn_2 = InlineKeyboardButton(text="Удалить 🗑️",callback_data=f"admin_delete_{post_id}")
+    btn_1 = InlineKeyboardButton(text="Пропустить 📤", callback_data=f"adminconfirm_{post_id}") # noqa
+    btn_2 = InlineKeyboardButton(text="Удалить 🗑️",callback_data=f"admindelete_{post_id}") # noqa
 
     keyboard.add(btn_1, btn_2)
     keyboard.adjust(2)

@@ -49,8 +49,6 @@ class AdminModel(AbstractModel):
     admin_role: Mapped[str] = mapped_column(nullable=False)
 
 
-
-
 async def create_tables():
     # Создание всех таблиц на основе моделей
     async with engine.begin() as conn:

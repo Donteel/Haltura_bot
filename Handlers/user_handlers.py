@@ -54,6 +54,7 @@ async def create_post(message: Message,state:FSMContext):
     await message.answer('Пришли мне готовый пост!',reply_markup=btn_cancel())
     await state.update_data(username=message.from_user.username)
     await state.set_state(NewPost.awaiting_finished_post)
+    logging.info(f'Пользователь {message.from_user.id} активировал кнопку публикации готового поста')
 
 
 @user_router.message(F.text == '❌ Закрыть пост')
@@ -99,27 +100,39 @@ async def delete_post(message: Message,state:FSMContext):
 
 @user_router.message(NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message,state:FSMContext):
-    post = message.text
+    logging.info(f'Пользователь {message.from_user.id}  отправляет пост на проверку.')
+    # Создаем запись во временную базу данных
+    post_text = message.text
 
     post_id = await action_orm.create_temp_post(user_id=message.from_user.id,
-                                                post_text=post,
+                                                post_text=post_text,
                                                 username=message.from_user.username
                                                 )
 
+    logging.info(f'Пользователь {message.from_user.id} предложил новую вакансию.\n'
+                 f'Текст сообщения -  {post_text}\n'
+                 f'Вакансия добавлена в временную базу данных, ID записи - {post_id}'
+                 )
+
+    # получаем ID всех администраторов
     admin_data:list[int] = await action_orm.get_admins_id()
 
+    logging.info(f'Список администраторов - {admin_data}')
 
-    await request_sender(admin_data=admin_data,
-                         post_text=message.text,
-                         username=message.from_user.username,
-                         post_id=post_id
-                         )
-
-    await message.answer('Ваш пост отправлен на проверку,ожидайте обновлений',
-                         reply_markup=btn_standby()
-                         )
-
-    await state.set_state(NewPost.pending_confirmation)
+    try:
+        # рассылаем заявку всем администраторам
+        await request_sender(admin_data=admin_data,
+                             post_text=message.text,
+                             username=message.from_user.username,
+                             post_id=post_id
+                             )
+    except Exception as e:
+        logging.error(f'Возникла ошибка при рассылке вакансии администраторам\n {e}')
+    else:
+        await message.answer('Ваш пост отправлен на проверку,ожидайте обновлений',
+                             reply_markup=btn_standby()
+                             )
+        await state.set_state(NewPost.pending_confirmation)
 
 
 @user_router.message(F.text == '📜 Правила')
