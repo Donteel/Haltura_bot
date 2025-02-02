@@ -52,7 +52,7 @@ async def start(message: Message):
 async def create_post(message: Message,state:FSMContext):
 
     await message.answer('<b>Пришли мне готовый пост <u>только текстом!</u></b>\n'
-                         'Не забудь укать контактные данные.',
+                         'Не забудь указать контактные данные.',
                          reply_markup=btn_cancel())
     await state.update_data(username=message.from_user.username)
     await state.set_state(NewPost.awaiting_finished_post)
