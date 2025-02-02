@@ -103,7 +103,7 @@ async def delete_post(message: Message,state:FSMContext):
 async def awaiting_post(message: Message,state:FSMContext):
 
     await message.answer('К сожалению по формату группы,мы не публикуем заявку с фото или видео материалами.\n'
-                         'Отправьте текст заявки или отмените действие.',
+                         'Отправьте текст заявки или отмени действие.',
                          reply_markup=btn_cancel()
                          )
 
