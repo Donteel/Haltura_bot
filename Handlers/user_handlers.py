@@ -51,7 +51,9 @@ async def start(message: Message):
 @user_router.message(F.text == '📢 Опубликовать готовый пост')
 async def create_post(message: Message,state:FSMContext):
 
-    await message.answer('Пришли мне готовый пост!',reply_markup=btn_cancel())
+    await message.answer('<b>Пришли мне готовый пост <u>только текстом!</u></b>\n'
+                         'Не забудь укать контактные данные.',
+                         reply_markup=btn_cancel())
     await state.update_data(username=message.from_user.username)
     await state.set_state(NewPost.awaiting_finished_post)
     logging.info(f'Пользователь {message.from_user.id} активировал кнопку публикации готового поста')
@@ -97,8 +99,17 @@ async def delete_post(message: Message,state:FSMContext):
         else:
             await message.answer('Пост с таким номером не был найден',reply_markup=btn_cancel())
 
+@user_router.message(F.photo,NewPost.awaiting_finished_post)
+async def awaiting_post(message: Message,state:FSMContext):
 
-@user_router.message(NewPost.awaiting_finished_post)
+    await message.answer('К сожалению по формату группы,мы не публикуем заявку с фото или видео материалами.\n'
+                         'Отправьте текст заявки или отмените действие.',
+                         reply_markup=btn_cancel()
+                         )
+
+
+
+@user_router.message(F.text,NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message,state:FSMContext):
     logging.info(f'Пользователь {message.from_user.id}  отправляет пост на проверку.')
     # Создаем запись во временную базу данных
