@@ -1,4 +1,6 @@
+import aiogram
 from aiogram.exceptions import TelegramMigrateToChat
+from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram import F
 from sqlalchemy.testing.plugin.plugin_base import logging
@@ -90,3 +92,38 @@ async def remove_temp_post(message:Message, state: FSMContext):
     logging.info('Пост успешно удален, все данные выгружены')
 
     await message.answer('Причина отправлена пользователю, все данные удалены!')
+
+
+@admin_router.message(Command('broadcast'))
+async def broadcast(message: Message,state: FSMContext):
+    if message.from_user.id in await action_orm.get_admins_id():
+        await message.answer('Давай отправим сообщение всем пользователям.\n'
+                             'Жду твоего сообщения для рассылки...',
+                             reply_markup=btn_cancel()
+                             )
+        await state.set_state(AdminState.waiting_for_broadcast_ms)
+    else:
+        await message.answer('Вам не доступна эта команда.',reply_markup=btn_home())
+
+
+@admin_router.message(F.text,AdminState.waiting_for_broadcast_ms)
+async def send_broadcast(message: Message,state: FSMContext):
+    blocked_count = 0
+    all_users = await action_orm.get_users_id()
+    if all_users is not None:
+        for user_id in all_users:
+            try:
+                if int(user_id) != message.from_user.id:
+                    await message.bot.send_message(text=message.text,
+                                                   chat_id=int(user_id)
+                                                   )
+            except aiogram.exceptions.TelegramForbiddenError as e:
+                blocked_count += 1
+                logging.error(f'Произошла ошибка {e} во время отправки сообщения пользователю')
+        await message.answer(f'Я отправил сообщения всем пользователям.\n'
+                             f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>')
+        await state.clear()
+    else:
+        await message.answer('Пользователи не найдены или возникла ошибка их извлечения',
+                             reply_markup=btn_home()
+                             )

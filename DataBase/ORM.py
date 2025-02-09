@@ -30,6 +30,16 @@ class ActionModel:
                 return False
 
 
+    async def get_users_id(self):
+        async with self.session_factory() as session:
+            stmt = await session.execute(select(UserModel.id))
+            result = stmt.scalars().all()
+            logging.info('Я получил ID всех пользователей в таком формате:\n'
+                         f'{result}')
+            return result
+
+
+
     async def create_new_post(self,post_text,user_id,message_id):
         async with self.session_factory() as session:
             post = PostModel()

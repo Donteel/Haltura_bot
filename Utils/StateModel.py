@@ -42,6 +42,7 @@ class NewPost(StatesGroup):
     pending_confirmation = State()
 
 class AdminState(StatesGroup):
+    waiting_for_broadcast_ms = State()
     waiting_action = State()
     waiting_for_reason = State()
 
