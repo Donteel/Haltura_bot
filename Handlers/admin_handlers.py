@@ -40,7 +40,7 @@ async def confirm_post(callback: CallbackQuery):
 
 
         await callback.bot.send_message(text='Ваш пост успешно прошел проверку и был выложен в группу.\n'
-                                             f'Номер публикации - <b><i>{post_id}</i></b> он пригодится если вы захотите закрыть вакансию.\n\n'
+                                             f'Номер публикации - <b><i>{message_obj.message_id}</i></b> он пригодится если вы захотите закрыть вакансию.\n\n'
                                              f'<b>Благодарю за использование нашего сервиса!</b>',
                                         chat_id=int(post_data['user_id']),
                                         reply_markup=btn_home()
