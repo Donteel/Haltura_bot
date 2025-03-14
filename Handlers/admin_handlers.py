@@ -71,7 +71,6 @@ async def delete_temp_post(callback: CallbackQuery,state: FSMContext):
     await state.update_data(sender_id=post_data['user_id'],post_id=post_id)
 
 
-
 @admin_router.message(AdminState.waiting_for_reason,F.text)
 async def remove_temp_post(message:Message, state: FSMContext):
     data = await state.get_data()
