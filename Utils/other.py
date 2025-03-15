@@ -168,30 +168,36 @@ async def post_processing_modification(admins_data,**kwargs):
 async def post_moderation(post_text):
 
     gpt_client = OpenAI(api_key=gpt_key)
+    try:
+        completion = gpt_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role":"system",
+                 "content":
+                     "Ты система которая определяет является ли текст вакансией.\n"
+                     "Ты можешь отвечать только числами 0 или 1.\n"
+                     "Твоя задача определять является ли текст пользователя вакансией.\n"
+                     "Ты проверяешь указаны ли следующие пункты в вакансии:\n"
+                     "Обязательно: обязанности, адрес, контактные данные.\n"
+                     "Опционально: оплата."
+                     "Запрещено: реклама, курьеры, фриланс, регистрации, фин. операции.\n, сомнительные вакансии."
+                     "Если текст не относится к вакансии или нарушены правила вакансии ты должен отправить 0 а если все в порядке то 1"
+                 },
+                {"role":"user",
+                 "content":post_text}
+            ]
+        )
+        logging.info(f'Вакансия - {post_text}\n'
+                     f'Вердикт модели - {completion.choices[0].message.content}')
 
-    completion = gpt_client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role":"system",
-             "content":
-                 "Ты система которая определяет является ли текст вакансией.\n"
-                 "Ты можешь отвечать только числами 0 или 1.\n"
-                 "Твоя задача определять является ли текст пользователя вакансией.\n"
-                 "Ты проверяешь указаны ли следующие пункты в вакансии:\n"
-                 "Обязательно: обязанности, адрес, контактные данные.\n"
-                 "Опционально: оплата."
-                 "Запрещено: реклама, курьеры, фриланс, регистрации, фин. операции.\n, сомнительные вакансии."
-                 "Если текст не относится к вакансии или нарушены правила вакансии ты должен отправить 0 а если все в порядке то 1"
-             },
-            {"role":"user",
-             "content":post_text}
-        ]
-    )
-    logging.info(f'Вакансия - {post_text}\n'
-                 f'Вердикт модели - {completion.choices[0].message.content}')
-
-    if completion.choices[0].message.content == "1":
-        return True
-    else:
+        if completion.choices[0].message.content == "1":
+            return True
+        else:
+            return False
+    except Exception as e:
+        await admin_broadcast(await action_orm.get_admins_id(),
+                              "Бот получил ошибку из за которой не смог проверить вакансию.\n"
+                                    f"Текст ошибки:\n {e}"
+                              )
         return False
 
