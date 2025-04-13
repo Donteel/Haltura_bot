@@ -16,9 +16,11 @@ class NewPost(StatesGroup):
 class AdminState(StatesGroup):
     waiting_for_broadcast_ms = State()
     waiting_action = State()
+    post_canceling = State()
     waiting_for_reason = State()
+    action_blocked = State()
 
 
-class DeletePostState(StatesGroup):
+class DeactivatePostState(StatesGroup):
     waiting_post_id = State()
 

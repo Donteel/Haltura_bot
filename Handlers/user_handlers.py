@@ -1,22 +1,31 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message,ReplyKeyboardRemove
 from aiogram import F
+from DataBase.MessageObject import MessageObject
+from DataBase.postObject import PostObject
+from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
 from MiddleWares.PendingConfirmaionMiddleWares import CheckPendingConfirmMiddleware
 from MiddleWares.SpamProtections import SpamProtected
 from Utils.Keyboards import *
 from aiogram import Router
 from aiogram.filters import Command
-from Utils.ScheduleTasks import scheduler, time_zone
-from Utils.StateModel import NewPost, DeletePostState
+from Utils.bot_instance import bot
+from Utils.config import scheduler, r, orm_posts, orm_messages
+from Utils.ScheduleTasks import time_zone
+from Utils.StateModel import NewPost, DeactivatePostState
 from Utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
-from Utils.other import request_sender, post_moderation, admin_broadcast, job_posting
+from Utils.other import request_sender, post_moderation, post_publication, admin_broadcast
+
 
 user_router = Router()
 user_router.message.middleware(SpamProtected(rate_limit=1))
 user_router.message.middleware(CheckPendingConfirmMiddleware())
+user_router.message.middleware(CheckBlackListMiddleWare())
+user_router.callback_query.middleware(CheckBlackListMiddleWare())
 
 # @user_router.message()
 # async def start(message):
@@ -53,9 +62,8 @@ async def start(message: Message):
 async def create_post(message: Message,state:FSMContext):
 
     await message.answer('<b>Отправь готовый пост в формате <u>текста!</u></b>\n'
-                         'Оформив текст по правилам его одобрят быстрее.',
-                         reply_markup=btn_cancel()
-                         )
+                         'Оформив вакансию по правилам ее одобрят быстрее.',
+                         reply_markup=btn_cancel())
 
     await state.update_data(username=message.from_user.username)
 
@@ -67,28 +75,30 @@ async def create_post(message: Message,state:FSMContext):
 async def create_post(message: Message,state:FSMContext):
 
     await message.answer('Введите ID сообщение полученное при публикации',reply_markup=btn_cancel())
-    await state.set_state(DeletePostState.waiting_post_id)
+    await state.set_state(DeactivatePostState.waiting_post_id)
 
 
-@user_router.message(DeletePostState.waiting_post_id,F.text)
-async def delete_post(message: Message,state:FSMContext):
+# обработчик закрытия поста
+@user_router.message(DeactivatePostState.waiting_post_id, F.text)
+async def deactivate_post(message: Message,state:FSMContext):
     try:
         post_id = int(message.text)
     except ValueError:
         await message.answer('Нужно отправить номер сообщения без букв,пробелов и любых знаков!')
         return
     else:
-        print(message.from_user.id)
-        if post_data:= await action_orm.get_post(message_id=post_id,user_id=message.from_user.id):
-            print(int(main_chat),int(post_data['message_id']))
+
+        if post_data:= await orm_posts.get_post(post_id=post_id,
+                                                user_id=message.chat.id):
+
             try:
-                await message.bot.edit_message_text(text=f"{post_data['post_text']}\n ВАКАНСИЯ ЗАКРЫТА❌",
+                await message.bot.edit_message_text(text=f"{post_data.post_text}\n ВАКАНСИЯ ЗАКРЫТА❌",
                                                     chat_id=int(main_chat),
-                                                    message_id=int(post_data['message_id'])
+                                                    message_id=int(post_data.post_id)
                                                     )
-                await action_orm.post_deactivate(
+                await orm_posts.post_deactivate(
                     user_id=int(message.from_user.id),
-                    message_id=int(post_data['message_id']
+                    post_id=int(post_data.post_id
                         )
                 )
                 await message.answer('Сообщение успешно деактивировано',
@@ -103,86 +113,92 @@ async def delete_post(message: Message,state:FSMContext):
         else:
             await message.answer('Пост с таким номером не был найден',reply_markup=btn_cancel())
 
+
+# обработчик не текстовых постов
 @user_router.message(~F.text,NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message):
 
-    await message.answer('К сожалению по формату группы,мы не публикуем только текстовые вакансии.\n'
+    await message.answer('К сожалению по формату группы,мы публикуем только текстовые вакансии.\n'
                          'Повтори отправку вакансии используя текст и эмодзи по желанию.',
                          reply_markup=btn_cancel()
                          )
 
+
+# обработка готовой вакансии от пользователя
 @user_router.message(F.text,NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message,state:FSMContext):
+    await message.answer('Сейчас я проверю твою вакансию...')
 
-    logging.info(f'Пользователь {message.from_user.id}  отправляет пост на проверку.')
-
-    await message.answer("проверка вакансии, ожидайте...",reply_markup=ReplyKeyboardRemove())
-
-    # Если username указан, то он будет отображаться, а если нет, то будет "Неизвестен"
-    username = f"@{message.from_user.username}" if message.from_user.username else "Неизвестен"
-
-    state_data = await state.get_data()
-
-    # Создаем запись во временную базу данных
-
-    post_text = state_data.get('post_text',message.text)
-
-    logging.info(f'Пользователь {username} предложил новую вакансию.\n'
-                 f'Текст сообщения -  {post_text}\n')
-
-
-    # получаем ID всех администраторов
-    admin_data:list[int] = await action_orm.get_admins_id()
-
-
-    logging.info(f'Список администраторов - {admin_data}')
+    username = message.from_user.username or "Неизвестно"
+    admin_data = await action_orm.get_admins_id()
+    user_data = await state.get_data()
+    post_text = user_data.get('post_text',message.text)
 
     if await post_moderation(post_text):
-        await message.answer("Ваш пост прошел автоматическую проверку и будет опубликован.\n"
-                             "После публикации вы получите уведомление, ожидайте...", reply_markup=btn_home()
-                             )
 
-        await admin_broadcast(admin_data, "Я получил новую вакансию от пользователя\n"
-                                          "Она будет опубликована в течении 5 минут после получения этого сообщения\n"
-                                          "Текст вакансии:\n"
-                                          f"{post_text}\n"
-                                          f"Отправитель {username}\n")
+        # создать  запись в бд
+        post_id = await orm_posts.create_new_post(user_id=message.chat.id,
+                                                   username=username,
+                                                   post_text=post_text
+                                                   )
 
-        scheduler.add_job(job_posting,
-                          trigger='date',
-                          run_date=datetime.now(time_zone) + timedelta(minutes=5),
-                          args=(post_text, main_chat, message.chat.id)
-                          )
+        # Добавляем задачу на публикацию нового поста в канал
+        task_data = scheduler.add_job(
+            func=post_publication,
+            trigger="date",
+            args=[main_chat,post_id],
+            run_date = datetime.now(time_zone) + timedelta(minutes=5)
+        )
+
+        # добавляем job_id к записи
+        await orm_posts.addJobId_to_post(post_id,task_data.id)
+
+        # уведомить пользователя
+        await message.answer('Публикация прошла автоматическую проверку и будет опубликована через 5 минут.'
+                             'Спасибо за использование сервиса!',reply_markup=btn_home())
+
+
+        # уведомить администраторов
+        await request_sender(admin_data= await action_orm.get_admins_id(),
+                             post_id=post_id)
+
+        # удалить временные данные
+        await state.clear()
+
     else:
+        # добавить вакансию во временную базу данных
+        post_id = await orm_posts.create_new_post(user_id=message.chat.id,
+                                                   username=username,
+                                                   post_text=post_text,
+                                                   )
 
-        # создаем временную запись в базе данных
-        post_id = await action_orm.create_temp_post(user_id=message.from_user.id,
-                                                    post_text=post_text,
-                                                    username=username
-                                                    )
+        # отправить вакансию на одобрение администраторам
+        for admin in admin_data:
+            ms_obj = await bot.send_message(text=
+                                   "Вакансия требует ручной проверки!\n\n"
+                                   f"Отправитель - @{username}\n"
+                                   f"Текст вакансии:\n"
+                                   f"{post_text}",
+                                   chat_id=admin,
+                                   reply_markup=btn_approval(post_id)
+                                   )
 
-        logging.info(f'Вакансия добавлена в временную базу данных, ID записи - {post_id}')
+            # сохранить messages администраторов
+            admin_message = MessageObject(admin_id=admin,
+                                          temp_id=post_id,
+                                          message_id=ms_obj.message_id
+                                          )
 
+            await orm_messages.add_message_data(admin_message)
 
-        try:
-            # рассылаем заявку всем администраторам
-            await request_sender(admin_data=admin_data,
-                                 post_text=post_text,
-                                 username=message.from_user.username,
-                                 post_id=post_id
-                                 )
+        # уведомить пользователя
+        await message.answer("Вакансия не прошла автоматическую проверку.\n"
+                             "Скоро администраторы проверят ее вручную",
+                             reply_markup=btn_standby())
 
-        except Exception as e:
-            logging.error(f'Возникла ошибка при рассылке вакансии администраторам\n {e}')
-            await message.answer("Возникла не предвиденная ошибка,мы скоро исправим ее.",reply_markup=btn_home())
-            await state.clear()
-        else:
-            await message.answer("<b>Ваша вакансия не прошла автоматическую проверку.</b>\n"
-                                 "Скоро мы проверим ее вручную,ожидайте уведомление.",
-                                 reply_markup=btn_standby()
-                                 )
+        await state.clear()
+        await state.set_state(NewPost.pending_confirmation)
 
-            await state.set_state(NewPost.pending_confirmation)
 
 @user_router.message(Command("rules"))
 @user_router.message(F.text == '📜 Правила')

@@ -1,22 +1,33 @@
 import logging
-from Utils.config import r, action_orm, gpt_key
+from Utils.bot_instance import bot
+from aiogram.fsm.state import State
+from apscheduler.jobstores.base import JobLookupError
+from DataBase.MessageObject import MessageObject
+from Utils.config import r, action_orm, gpt_key,scheduler, orm_posts, orm_messages, storage, main_chat
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
-from aiogram.types import  InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
-from Utils.Keyboards import btn_admin_confirm, btn_plug, btn_home
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from Utils.Keyboards import btn_plug, btn_home, btn_moderation
 from openai import OpenAI
-from Utils.bot_instance import bot
-from Utils.config import storage, main_chat
 
 
 
-async def state_for_user(user_id: int, chat_id: int) -> FSMContext:
-    # Создаём контекст для определённого пользователя
-    key = StorageKey(chat_id=chat_id,user_id=user_id,bot_id=7926311537)
+
+# Создаём контекст для определённого пользователя
+async def state_for_user(user_id) -> FSMContext:
+    key = StorageKey(chat_id=user_id,user_id=user_id,bot_id=7926311537)
     context = FSMContext(storage=storage, key=key)
     return context
 
 
+# устанавливает состояние для указанного пользователя
+async def set_state_for(id_list:list,state_class: State):
+    for user_id in id_list:
+        state = await state_for_user(user_id)
+        await state.set_state(state_class)
+
+
+# удаляет сообщение из чата/канала/группы
 async def delete_message(chat_id: int,id_message: int) -> None:
 
     logging.info(f'Попытка удаления поста номер {id_message} из группы {chat_id}')
@@ -28,14 +39,8 @@ async def delete_message(chat_id: int,id_message: int) -> None:
         logging.info('Пост был успешно удален из группы')
 
 
-async def clearing_of_all_states(id_data:list[int]):
-    for object_id in id_data:
-        local_state = await state_for_user(object_id,object_id)
-        await local_state.clear()
-
-
-# функция для публикации сообщения с привлечением HR
-async def MessageForHr():
+# функция для публикации регулярного сообщения
+async def channel_message(message_text):
 
     if r.get('message_id') is not None:
 
@@ -47,124 +52,146 @@ async def MessageForHr():
     try:
         logging.info('Попытка отправки нового сообщения в группу')
         message_data = await bot.send_message(
-            text='<b>💼 Ищете сотрудников?</b>\n'
-                 'Вы можете опубликовать свою вакансию'
-                 ' бесплатно через нашего Telegram-бота! 🎯',
+            text=message_text,
             chat_id=int(main_chat),
             reply_markup=
-            InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text='Опубликовать 🔰',url='t.me/Haltura98_bot')]
-            ]
-            )
+                InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text='Опубликовать 🔰',url='t.me/Haltura98_bot')] # noqa
+                    ]
+                )
         )
+
         r.set(name='message_id',value=message_data.message_id)
+
         logging.info(f"Новый ID сообщения - {message_data.message_id} записан в кеш\n"
+                     
                      f"Данные записанные в кэш - {int(r.get('message_id').decode('utf-8'))}")
 
     except Exception as e:
         logging.error(f'Произошла не предвиденная ошибка при отправке сообщения в группу\n {e}')
 
 
-async def request_sender(admin_data:list[int],
-                         post_text:str,
-                         username:str,
-                         post_id:int
-                         ) -> None:
+async def request_sender(admin_data:list[int],post_id: int) -> None:
 
     """
     Функция для отправления заявки всем администраторам
     :param admin_data: ID администраторов
-    :param post_text: текст заявки
-    :param username: username отправителя
-    :param post_id: ID поста из базы данных
+    :param post_id: id записи в бд
     :return: None
     """
-    for admin_id in admin_data:
-        logging.info(f'Отправляю сообщение администратору {admin_id}')
-        message_obj = await bot.send_message(text=f'📢 <b>Новая вакансия от</b> {username}\n'
-                                             f'📝 <b>Текст вакансии:</b>\n'
-                                             f'{post_text}\n\n'
-                                             f'📌 <b>Статус заявки</b> -  Не обработан.',
-                                             chat_id=int(admin_id),
-                                             reply_markup=btn_admin_confirm(post_id)
-                                             )
 
-        r.set(name=f"{admin_id}_{post_id}",value=message_obj.message_id,ex='7200')
-        logging.info(f'Отправлено сообщение администратору {admin_id},'
-                     f'добавлена запись в redis ключ - f"{admin_id}_{post_id}", значение {message_obj.message_id}'
-                     )
+    post = await orm_posts.get_post(post_id)
+
+    for admin in admin_data:
+
+        # отправка сообщения админам
+
+        message_obj = \
+            await bot.send_message(
+                chat_id=admin,
+                text="Новая вакансия от пользователя!\n"
+                     "<b>Будет опубликована через 5 минут.</b>\n\n"
+                     "<u>Текст вакансии:</u>\n"
+                     f"{post.post_text}\n\n"
+                     f"<u>Отправитель - @{post.username}</u>",
+                reply_markup= btn_moderation(post.id)
+            )
+
+        # сохранить данные отправленных заявок для возможного изменения
+
+        admin_message = MessageObject(admin_id=admin,
+                                      temp_id=post.id,
+                                      message_id=message_obj.message_id
+                                      )
+
+        await orm_messages.add_message_data(admin_message)
 
 
-# Рассылка сообщений администраторам
-async def admin_broadcast(admin_data:list[int],text:str) -> None:
+# Функция рассылки сообщения администраторам
+async def admin_broadcast(admin_data:list[int],text:str,keyboard=btn_home) -> None:
+    """
+    Рассылка сообщения администраторам
+
+    :param admin_data: список ID администраторов
+    :param text: текст сообщения
+    :param keyboard: клавиатура
+    :return: None
+    """
     admin_count = 0
 
     for admin_id in admin_data:
-        await bot.send_message(chat_id=admin_id,text=text)
+        await bot.send_message(chat_id=admin_id,text=text,reply_markup=keyboard())
         admin_count +=1
     logging.info("Сообщение с текстом:\n"
                  f"{text} отправлено {admin_count} админам")
 
 
-async def job_posting(post_text:str,chat_id:int,user_id:int) -> int|None:
+async def post_publication(chat_id:int,post_id) -> None:
+    """
+    Публикует пост в группу
+    :param chat_id: id группы
+    :param post_id: id временной записи о вакансии
+    :return: None
+    """
+    post_data = await orm_posts.get_post(post_id)
     try:
+        # отправляем вакансию в канал
         message_obj = await bot.send_message(
-            text=f"{post_text}",
+            text=f"{post_data.post_text}",
             chat_id=int(chat_id)
         )
+
     except Exception as e:
-        logging.info(f"Ошибка публикации в главную группу\n"
+        logging.info(f"Ошибка публикации в  группу\n"
                      f"{e}")
-        return None
+        return
     else:
 
-        await action_orm.create_new_post(post_text=post_text,
-                                         user_id=user_id,
-                                         message_id=message_obj.message_id
-                                         )
+        # создаем запись в базу данных
+        await orm_posts.addMessageId_to_post(post_id=post_data.id,
+                                              message_id=message_obj.message_id
+                                              )
+
 
         await bot.send_message(
-            text='Ваш пост успешно прошел проверку и был выложен в группу.\n'
-                 f'Номер публикации - <b><i>{message_obj.message_id}</i></b> он пригодится если вы захотите закрыть вакансию.\n\n'
-                 f'<b>Благодарю за использование нашего сервиса!</b>',
-            chat_id=int(user_id),
+            text='<b>Пост успешно выложен в группу.</b>\n'
+                 f'Номер публикации - <code><i>{message_obj.message_id}</i></code> он пригодится для закрытия вакансии.\n\n'
+                 f'<b>Благодарим за использование нашего сервиса!</b>',
+            chat_id=int(post_data.user_id),
             reply_markup=btn_home()
         )
-
         return message_obj.message_id
 
 
-async def post_processing_modification(admins_data,**kwargs):
+async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> None:
     """
-        Функция изменяет сообщения администраторов если кто-то из них взаимодействовал с заявкой
+    Функция изменяет сообщение у администраторов
+     на конкретный пост в зависимости от вердикта администратора.
+
+    :param admins_data: список id администраторов
+    :param post_id: id  записи в бд
+    :param verdict: вердикт администратора
+    :return: bool
     """
+    verdicts = {"adminConfirm":"Опубликовано",
+                "adminDelete":"Удалено",
+                "postCancel":"Отменено",
+                "cancelAndBlock":"Отменён и Блокирован"}
 
-    post_text = kwargs['post_text']
-    post_id = kwargs['id']
-    username = kwargs['username']
-    key = kwargs['key']
-    post_status = 'Опубликован' if key == 'adminconfirm' else 'Удален' # noqa
+    for admin in admins_data:
 
-    for admin_id in admins_data:
-        processing_data = r.get(f'{admin_id}_{post_id}')
+        ms_obj = await orm_messages.get_message(admin,int(post_id))
 
-        print(f'Данные ключа администратора: {processing_data}')
+        verdict_text = verdicts[verdict]
 
-        if processing_data is not None:
-            await bot.edit_message_text(text=f'Новая вакансия от @{username}\n'
-                                             f'Текст вакансии:\n'
-                                             f'{post_text}\n'
-                                             f'Статус заявки {post_status}',
-                                        chat_id=int(admin_id),
-                                        message_id=int(processing_data.decode('utf-8')),
-                                        reply_markup=btn_plug()
-                                             )
-            r.delete(f'{admin_id}_{post_id}')
-        else:
-            return False
-    return True
+        await bot.edit_message_reply_markup(chat_id=admin,
+                                      message_id=ms_obj.message_id,
+                                      reply_markup=btn_plug(f"{verdict_text}!"))
 
 
+
+
+# AI модерация вакансий
 async def post_moderation(post_text):
 
     gpt_client = OpenAI(api_key=gpt_key)
@@ -200,4 +227,20 @@ async def post_moderation(post_text):
                                     f"Текст ошибки:\n {e}"
                               )
         return False
+
+
+def schedule_cancel(schedule_id):
+    try:
+        scheduler.remove_job(schedule_id)
+    except JobLookupError as e:
+        logging.error(f"Произошла ошибка остановки задачи № {schedule_id}\n"
+                      f"{e}")
+        return False
+    except Exception as e:
+
+        logging.error("Произошла непредвиденная ошибка удаления задачи\n"
+                      f"{e}")
+        return False
+    return True
+
 

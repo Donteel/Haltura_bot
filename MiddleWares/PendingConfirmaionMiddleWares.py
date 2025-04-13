@@ -3,7 +3,6 @@ from typing import Callable, Any, Dict, Awaitable
 from aiogram.types import TelegramObject, Message
 from aiogram import BaseMiddleware
 from Utils.StateModel import NewPost
-from Utils.config import storage
 from Utils.other import state_for_user
 
 
@@ -21,9 +20,8 @@ class CheckPendingConfirmMiddleware(BaseMiddleware):
         if isinstance(event, Message):
 
             user_id = event.from_user.id
-            chat_id = event.chat.id
 
-            context = await state_for_user(user_id, chat_id)
+            context = await state_for_user(user_id)
             user_state = await context.get_state()
 
             logging.info(f'Состояние пользователя {user_state}')

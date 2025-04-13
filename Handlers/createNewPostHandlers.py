@@ -1,14 +1,17 @@
 from aiogram.types import Message
 from aiogram import F
-
 from Handlers.user_handlers import awaiting_post
+from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
 from Utils.Keyboards import *
 from aiogram import Router
 from Utils.StateModel import NewPost
 from aiogram.fsm.context import FSMContext
 from Utils.other import request_sender, post_moderation
 
+
 create_post_router = Router()
+create_post_router.message.middleware(CheckBlackListMiddleWare())
+create_post_router.callback_query.middleware(CheckBlackListMiddleWare())
 
 @create_post_router.message(~F.text)
 async def type_message_error(message: Message):
@@ -25,7 +28,7 @@ async def cancel_create(message: Message,state: FSMContext):
 async def start_creating(message: Message,state: FSMContext):
     await message.answer(
         '<b>Начнем создание поста!</b>\n\n'
-        'Где предстоит работать? (название компании или частный заказ)',
+        'Где предстоит работать? (название компании или локация к месту работы)',
         reply_markup=btn_cancel_create()
     )
     await state.set_state(NewPost.company_name)
@@ -50,7 +53,7 @@ async def awaiting_place(message: Message,state: FSMContext):
 @create_post_router.message(NewPost.data_time)
 async def awaiting_datatime(message: Message,state: FSMContext):
     await state.update_data(datatime=message.text)
-    await message.answer('Опишите основные обязанности, задачи и формат работы.')
+    await message.answer('Укажите должность или формат работы.')
     await state.set_state(NewPost.job_title)
 
 
@@ -91,10 +94,10 @@ async def awaiting_contacts(message: Message,state: FSMContext):
     data  = await state.get_data()
 
     new_post =  f"📍 <b>Локация:</b>\n"\
-                f"{data['company_name']}\n"\
+                f"{data['place']}\n"\
                 "\n"\
                 f"📍 <b>Компания / Работодатель:</b>\n"\
-                f"{data['place']}\n"\
+                f"{data['company_name']}\n"\
                 "\n"\
                 f"⏳ <b>Срочность:</b>\n"\
                 f"{data['datatime']}\n"\
@@ -132,6 +135,6 @@ async def awaiting_pending_confirmation(message: Message,state: FSMContext):
 
 # создание поста заново
 @create_post_router.message(NewPost.pending_confirmation,F.text == "🔄 Создать заново")
-async def awaiting_pending_confirmation(message: Message,state: FSMContext):
+async def reload_constructor(message: Message,state: FSMContext):
     await state.clear()
     await start_creating(message,state)
