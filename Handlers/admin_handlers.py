@@ -4,6 +4,8 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram import F
 from sqlalchemy.testing.plugin.plugin_base import logging
+
+from MiddleWares.AddUserMiddleWare import AddUserMiddleware
 from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
 from Utils.Keyboards import *
 from aiogram import Router
@@ -14,6 +16,9 @@ from aiogram.fsm.context import FSMContext
 from Utils.other import state_for_user, schedule_cancel, post_publication, change_admin_message
 
 admin_router = Router()
+
+admin_router.message.middleware(AddUserMiddleware())
+admin_router.callback_query.middleware(AddUserMiddleware())
 admin_router.message.middleware(CheckBlackListMiddleWare())
 admin_router.callback_query.middleware(CheckBlackListMiddleWare())
 

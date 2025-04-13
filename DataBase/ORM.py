@@ -56,6 +56,19 @@ class UserManagementBase:
             await session.rollback()
             return False
 
+
+    @with_session
+    async def get_user(self,session: AsyncSession,tg_id):
+
+        stmt = await session.execute(select(UserModel).where(UserModel.id==tg_id))
+        result = stmt.scalar_one_or_none()
+        if result:
+            return result
+        else:
+            return False
+
+
+
     @with_session
     async def get_users_ids(self, session: AsyncSession):
         stmt = await session.execute(select(UserModel.id))

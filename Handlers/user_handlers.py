@@ -6,6 +6,7 @@ from aiogram.types import Message,ReplyKeyboardRemove
 from aiogram import F
 from DataBase.MessageObject import MessageObject
 from DataBase.postObject import PostObject
+from MiddleWares.AddUserMiddleWare import AddUserMiddleware
 from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
 from MiddleWares.PendingConfirmaionMiddleWares import CheckPendingConfirmMiddleware
 from MiddleWares.SpamProtections import SpamProtected
@@ -22,6 +23,9 @@ from Utils.other import request_sender, post_moderation, post_publication, admin
 
 
 user_router = Router()
+
+user_router.message.middleware(AddUserMiddleware())
+user_router.callback_query.middleware(AddUserMiddleware())
 user_router.message.middleware(SpamProtected(rate_limit=1))
 user_router.message.middleware(CheckPendingConfirmMiddleware())
 user_router.message.middleware(CheckBlackListMiddleWare())
@@ -34,12 +38,6 @@ user_router.callback_query.middleware(CheckBlackListMiddleWare())
 @user_router.message(Command('start'))
 async def start(message: Message):
 
-    if await action_orm.create_user(
-            tg_id=message.from_user.id,
-            username=message.from_user.username):
-        logging.info('Пользователь добавлен в базу')
-    else:
-        logging.info('Пользователь уже есть в базе')
 
     await message.answer('Добро пожаловать в Халтура бот,выбери действие.'
                         ,reply_markup=btn_home())
