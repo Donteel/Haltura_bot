@@ -9,7 +9,7 @@ from Utils.Keyboards import *
 from aiogram import Router
 from Utils.StateModel import AdminState
 from Utils.bot_instance import bot
-from Utils.config import action_orm, main_chat, r, orm_posts
+from Utils.config import action_orm, main_chat, orm_posts
 from aiogram.fsm.context import FSMContext
 from Utils.other import state_for_user, schedule_cancel, post_publication, change_admin_message
 
