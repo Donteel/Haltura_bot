@@ -2,10 +2,7 @@ import logging
 from typing import Callable, Any, Dict, Awaitable
 from aiogram.types import TelegramObject, Message, CallbackQuery
 from aiogram import BaseMiddleware
-from Utils.StateModel import NewPost
-from Utils.bot_instance import bot
-from Utils.config import storage, action_orm
-from Utils.other import state_for_user
+from Utils.config import action_orm
 
 
 class CheckBlackListMiddleWare(BaseMiddleware):
@@ -15,7 +12,7 @@ class CheckBlackListMiddleWare(BaseMiddleware):
 
     async def __call__(self,
                        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-                       event: TelegramObject,
+                       event: Message | CallbackQuery,
                        data: Dict[str, Any]
                        ):
 
