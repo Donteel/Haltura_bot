@@ -10,10 +10,11 @@ def create_reply_keyboard(buttons: tuple,resize_keyboard=True, adjust=1):
     keyboard.adjust(adjust)
     return keyboard.as_markup(resize_keyboard=resize_keyboard)
 
-def create_inline_keyboard(buttons: tuple | list,adjust=1):
+def create_inline_keyboard(buttons: tuple | list,adjust: int|list=1):
     keyboard = InlineKeyboardBuilder()
-    keyboard.add(*buttons)
-    return keyboard.as_markup(adjust=adjust)
+    for button in buttons:
+        keyboard.row(*button)
+    return keyboard.as_markup()
 
 
 def btn_home():
@@ -59,18 +60,20 @@ def btn_cancel():
     return create_reply_keyboard((btn_1,))
 
 
-def btn_approval(temp_id):
+def btn_approval(post_id):
 
-    btn_1 = InlineKeyboardButton(text="Пропустить 📤", callback_data=f"adminConfirm_{temp_id}")
-    btn_2 = InlineKeyboardButton(text="Удалить 🗑️",callback_data=f"adminDelete_{temp_id}")
-    return create_inline_keyboard((btn_1, btn_2),adjust=2)
+    btn_1 = InlineKeyboardButton(text="Пропустить 📤", callback_data=f"adminConfirm_{post_id}")
+    btn_2 = InlineKeyboardButton(text="Удалить 🗑️",callback_data=f"adminDelete_{post_id}")
+    btn_3 = InlineKeyboardButton(text="⛔ удалить и Блок",callback_data=f'delAndBlock_{post_id}')
+
+    return create_inline_keyboard([[btn_1, btn_2],[btn_3]])
 
 
 def btn_plug(verdict):
 
     btn_1 = InlineKeyboardButton(text=f'{verdict}',callback_data="plug")
 
-    return create_inline_keyboard((btn_1,))
+    return create_inline_keyboard([[btn_1],])
 
 
 def btn_standby():
@@ -84,7 +87,7 @@ def btn_rules(rules_link: str):
 
     btn_1 = InlineKeyboardButton(text='Читать...', url=rules_link)
 
-    return create_reply_keyboard((btn_1,))
+    return create_inline_keyboard((btn_1,))
 
 
 def btn_moderation(temp_id):

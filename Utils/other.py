@@ -176,7 +176,8 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
     verdicts = {"adminConfirm":"Опубликовано",
                 "adminDelete":"Удалено",
                 "postCancel":"Отменено",
-                "cancelAndBlock":"Отменён и Блокирован"}
+                "cancelAndBlock":"Отменён и Блокирован",
+                "delAndBlock": "Удален и Блокирован"}
 
     for admin in admins_data:
 

@@ -53,7 +53,7 @@ async def confirm_post(callback: CallbackQuery, state: FSMContext):
 
 # удаление предложенной вакансии
 @admin_router.callback_query(F.data.startswith('adminDelete_'))    # noqa
-async def delete_temp_post(callback: CallbackQuery,state: FSMContext):
+async def delete_post(callback: CallbackQuery,state: FSMContext):
 
     callback_text,post_id = callback.data.split('_')
 
@@ -97,43 +97,6 @@ async def cancel_post(message:Message, state: FSMContext):
     await state.clear()
 
     await message.answer('Причина отправлена пользователю!')
-
-
-# рассылка пользователям
-@admin_router.message(Command('broadcast'))
-async def broadcast(message: Message,state: FSMContext):
-    if message.from_user.id in await action_orm.get_admins_id():
-        await message.answer('Давай отправим сообщение всем пользователям.\n'
-                             'Жду твоего сообщения для рассылки...',
-                             reply_markup=btn_cancel()
-                             )
-        await state.set_state(AdminState.waiting_for_broadcast_ms)
-    else:
-        await message.answer('Вам не доступна эта команда.',reply_markup=btn_home())
-
-
-# исполнение рассылки
-@admin_router.message(F.text,AdminState.waiting_for_broadcast_ms)
-async def send_broadcast(message: Message,state: FSMContext):
-    blocked_count = 0
-    all_users = await action_orm.get_users_ids()
-    if all_users is not None:
-        for user_id in all_users:
-            try:
-                if int(user_id) != message.from_user.id:
-                    await message.bot.send_message(text=message.text,
-                                                   chat_id=int(user_id)
-                                                   )
-            except aiogram.exceptions.TelegramForbiddenError as e:
-                blocked_count += 1
-                logging.error(f'Произошла ошибка {e} во время отправки сообщения пользователю')
-        await message.answer(f'Я отправил сообщения всем пользователям.\n'
-                             f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>')
-        await state.clear()
-    else:
-        await message.answer('Пользователи не найдены или возникла ошибка их извлечения',
-                             reply_markup=btn_home()
-                             )
 
 
 @admin_router.callback_query(F.data.startswith('postingCancel'))
@@ -189,3 +152,52 @@ async def cancel_posting_and_block(callback: CallbackQuery,state: FSMContext):
         await callback.answer('Публикация уже опубликована или отменена ранее.')
 
     await callback.answer()
+
+
+@admin_router.callback_query(F.data.startswith('delAndBlock'))
+async def delete_and_block(callback: CallbackQuery,state: FSMContext):
+    callback_text,post_id = callback.data.split('_')
+    post = await orm_posts.get_post(int(post_id))
+    if post:
+        await action_orm.add_to_blacklist(post.user_id)
+    await delete_post(callback,state)
+
+    await callback.answer('Пользователь добавлен в черный список!',show_alert=True)
+
+
+
+# рассылка пользователям
+@admin_router.message(Command('broadcast'))
+async def broadcast(message: Message,state: FSMContext):
+    if message.from_user.id in await action_orm.get_admins_id():
+        await message.answer('Давай отправим сообщение всем пользователям.\n'
+                             'Жду твоего сообщения для рассылки...',
+                             reply_markup=btn_cancel()
+                             )
+        await state.set_state(AdminState.waiting_for_broadcast_ms)
+    else:
+        await message.answer('Вам не доступна эта команда.',reply_markup=btn_home())
+
+
+# исполнение рассылки
+@admin_router.message(F.text,AdminState.waiting_for_broadcast_ms)
+async def send_broadcast(message: Message,state: FSMContext):
+    blocked_count = 0
+    all_users = await action_orm.get_users_ids()
+    if all_users is not None:
+        for user_id in all_users:
+            try:
+                if int(user_id) != message.from_user.id:
+                    await message.bot.send_message(text=message.text,
+                                                   chat_id=int(user_id)
+                                                   )
+            except aiogram.exceptions.TelegramForbiddenError as e:
+                blocked_count += 1
+                logging.error(f'Произошла ошибка {e} во время отправки сообщения пользователю')
+        await message.answer(f'Я отправил сообщения всем пользователям.\n'
+                             f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>')
+        await state.clear()
+    else:
+        await message.answer('Пользователи не найдены или возникла ошибка их извлечения',
+                             reply_markup=btn_home()
+                             )

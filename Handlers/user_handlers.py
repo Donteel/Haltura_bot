@@ -152,8 +152,10 @@ async def awaiting_post(message: Message,state:FSMContext):
         await orm_posts.addJobId_to_post(post_id,task_data.id)
 
         # уведомить пользователя
-        await message.answer('Публикация прошла автоматическую проверку и будет опубликована через 5 минут.'
-                             'Спасибо за использование сервиса!',reply_markup=btn_home())
+        await message.answer("Всё в порядке!\n"
+                             "Вакансия будет опубликована через 5 минут. Спасибо, что остаётесь нами!",
+                             reply_markup=btn_home()
+                             )
 
 
         # уведомить администраторов
@@ -190,8 +192,8 @@ async def awaiting_post(message: Message,state:FSMContext):
             await orm_messages.add_message_data(admin_message)
 
         # уведомить пользователя
-        await message.answer("Вакансия не прошла автоматическую проверку.\n"
-                             "Скоро администраторы проверят ее вручную",
+        await message.answer("Система не смогла автоматически одобрить вакансию.\n"
+                             " Я передал ее на проверку администратору.",
                              reply_markup=btn_standby())
 
         await state.clear()
