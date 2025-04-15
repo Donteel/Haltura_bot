@@ -25,7 +25,7 @@ class AddUserMiddleware(BaseMiddleware):
 
 
         elif isinstance(event, CallbackQuery):
-            user_data = await action_orm.get_user(event.chat.id)
+            user_data = await action_orm.get_user(event.message.chat.id)
             if not user_data:
                 await action_orm.create_user(event.message.chat.id, event.message.from_user.username)
 
