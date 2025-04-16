@@ -34,7 +34,7 @@ def btn_links(links:list[str:str]):
     """
 
     return create_inline_keyboard(
-        [InlineKeyboardButton(text=f'⛑ {name}',url=f't.me/{link}') for link, name in links]
+        [[InlineKeyboardButton(text=f'⛑ {name}',url=f't.me/{link}')] for link, name in links]
     )
 
 
