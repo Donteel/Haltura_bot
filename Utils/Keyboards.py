@@ -94,4 +94,4 @@ def btn_moderation(temp_id):
     btn_1 = InlineKeyboardButton(text="❌ Отменить", callback_data=f'postingCancel_{temp_id}')
     btn_2 = InlineKeyboardButton(text="⛔ Отмена и Блок", callback_data=f'cancelAndBlock_{temp_id}')
 
-    return create_inline_keyboard((btn_1,btn_2,),adjust=1)
+    return create_inline_keyboard([[btn_1,btn_2]])
