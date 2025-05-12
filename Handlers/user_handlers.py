@@ -60,10 +60,7 @@ async def subscribe(callback: CallbackQuery):
                                  group_id=main_chat):
         await start(message=callback.message)
     else:
-        await bot.send_message(text='Вы все еще не подписаны...',
-                               chat_id=callback.message.chat.id,
-                               reply_markup=btn_subscribe()
-                               )
+        await callback.answer(show_alert=True,text='Вы все еще не подписаны...')
     await callback.answer()
 
 
