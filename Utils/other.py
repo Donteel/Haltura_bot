@@ -1,4 +1,6 @@
 import logging
+from aiogram.exceptions import TelegramBadRequest
+from aiogram import Bot
 from Utils.bot_instance import bot
 from aiogram.fsm.state import State
 from apscheduler.jobstores.base import JobLookupError
@@ -190,6 +192,17 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
                                       reply_markup=btn_plug(f"{verdict_text}!"))
 
 
+async def check_member_status(bot_obj: Bot,user_id: int, group_id: int) -> bool:
+    try:
+
+        member = await bot_obj.get_chat_member(group_id,user_id)
+        print(member.status)
+        return member.status in ['member', 'administrator', 'creator']
+    except TelegramBadRequest as e:
+        logging.error('При проверке пользователя на подписку произошла ошибка,'
+                      ' неверный ID группы или пользователь не подписан'
+                      f'{e.__dict__}')
+        return False
 
 
 # AI модерация вакансий

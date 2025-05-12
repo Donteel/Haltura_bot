@@ -27,7 +27,7 @@ def btn_home():
     return create_reply_keyboard((btn_1, btn_2, btn_3, btn_4))
 
 
-def btn_links(links:list[str:str]):
+def btn_admins(links: list[str:str]):
     """
     :param links: list содержит кортежи (ссылка/administrator)
     :return: inline клавиатуру
@@ -82,12 +82,23 @@ def btn_standby():
 
     return create_reply_keyboard((btn_1,))
 
+def btn_link(button_text: str, rules_link: str):
+
+    btn_1 = InlineKeyboardButton(text=f'{button_text}', url=rules_link)
+
+    return create_inline_keyboard((btn_1,))
+
+def btn_subscribe():
+    btn_1= InlineKeyboardButton(text='Подписаться 👀',url='https://t.me/+gtQppDLgOT0xYWMy')
+    btn_2= InlineKeyboardButton(text='Проверить 👮🏻‍♂️', callback_data='subscribe')
+
+    return create_inline_keyboard([[btn_1],[btn_2]])
 
 def btn_rules(rules_link: str):
 
     btn_1 = InlineKeyboardButton(text='Читать...', url=rules_link)
 
-    return create_inline_keyboard((btn_1,))
+    return create_inline_keyboard([[btn_1]])
 
 
 def btn_moderation(temp_id):

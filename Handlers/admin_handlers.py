@@ -7,6 +7,7 @@ from sqlalchemy.testing.plugin.plugin_base import logging
 
 from MiddleWares.AddUserMiddleWare import AddUserMiddleware
 from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
+from MiddleWares.SubscriptionVerification import SubscriptionVerificationMiddleware
 from Utils.Keyboards import *
 from aiogram import Router
 from Utils.StateModel import AdminState
@@ -17,10 +18,13 @@ from Utils.other import state_for_user, schedule_cancel, post_publication, chang
 
 admin_router = Router()
 
-admin_router.message.middleware(AddUserMiddleware())
-admin_router.callback_query.middleware(AddUserMiddleware())
+
 admin_router.message.middleware(CheckBlackListMiddleWare())
 admin_router.callback_query.middleware(CheckBlackListMiddleWare())
+admin_router.message.middleware(AddUserMiddleware())
+admin_router.callback_query.middleware(AddUserMiddleware())
+admin_router.message.middleware(SubscriptionVerificationMiddleware())
+admin_router.callback_query.middleware(SubscriptionVerificationMiddleware())
 
 
 @admin_router.callback_query(AdminState.action_blocked)

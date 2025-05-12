@@ -2,7 +2,7 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import Message,ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram import F
 from DataBase.MessageObject import MessageObject
 from DataBase.postObject import PostObject
@@ -10,6 +10,7 @@ from MiddleWares.AddUserMiddleWare import AddUserMiddleware
 from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
 from MiddleWares.PendingConfirmaionMiddleWares import CheckPendingConfirmMiddleware
 from MiddleWares.SpamProtections import SpamProtected
+from MiddleWares.SubscriptionVerification import SubscriptionVerificationMiddleware
 from Utils.Keyboards import *
 from aiogram import Router
 from aiogram.filters import Command
@@ -19,21 +20,23 @@ from Utils.ScheduleTasks import time_zone
 from Utils.StateModel import NewPost, DeactivatePostState
 from Utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
-from Utils.other import request_sender, post_moderation, post_publication, admin_broadcast
-
+from Utils.other import request_sender, post_moderation, post_publication, admin_broadcast, check_member_status
 
 user_router = Router()
 
+
+user_router.message.middleware(CheckBlackListMiddleWare())
+user_router.callback_query.middleware(CheckBlackListMiddleWare())
 user_router.message.middleware(AddUserMiddleware())
 user_router.callback_query.middleware(AddUserMiddleware())
 user_router.message.middleware(SpamProtected(rate_limit=1))
 user_router.message.middleware(CheckPendingConfirmMiddleware())
-user_router.message.middleware(CheckBlackListMiddleWare())
-user_router.callback_query.middleware(CheckBlackListMiddleWare())
+user_router.message.middleware(SubscriptionVerificationMiddleware())
+user_router.callback_query.middleware(SubscriptionVerificationMiddleware())
 
 # @user_router.message()
-# async def start(message):
-#     print(message.chat.id)
+# async def print_id(message):
+#     print(message.forward_from_chat.id)
 
 @user_router.message(Command('start'))
 async def start(message: Message):
@@ -44,15 +47,31 @@ async def start(message: Message):
 
 
 @user_router.message(F.text == '❌ Отменить')
-async def start(message: Message,state: FSMContext):
+async def cancel_func(message: Message,state: FSMContext):
     await state.clear()
     await message.answer('Действие отменено',reply_markup=btn_home())
 
 
+@user_router.callback_query(F.data == 'subscribe')
+async def subscribe(callback: CallbackQuery):
+    logging.info('Активирована кнопка проверки подписки.')
+    if await check_member_status(bot,
+                                 user_id=callback.from_user.id,
+                                 group_id=main_chat):
+        await start(message=callback.message)
+    else:
+        await bot.send_message(text='Вы все еще не подписаны...',
+                               chat_id=callback.message.chat.id,
+                               reply_markup=btn_subscribe()
+                               )
+    await callback.answer()
+
+
+
 @user_router.message(Command('help'))
-async def start(message: Message):
+async def help_func(message: Message):
     await message.reply('Можешь связаться с нужным тебе администратором',
-                        reply_markup=btn_links(links=await action_orm.get_admins())
+                        reply_markup=btn_admins(links=await action_orm.get_admins())
                         )
 
 
@@ -206,4 +225,3 @@ async def rules(message: Message):
     await message.answer('Правила публикации постов!',
                          reply_markup=btn_rules(r'https://telegra.ph/Pravila-dlya-reklamodatelej-12-20')
                          )
-

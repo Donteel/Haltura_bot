@@ -3,6 +3,7 @@ from aiogram import F
 from Handlers.user_handlers import awaiting_post
 from MiddleWares.AddUserMiddleWare import AddUserMiddleware
 from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
+from MiddleWares.SubscriptionVerification import SubscriptionVerificationMiddleware
 from Utils.Keyboards import *
 from aiogram import Router
 from Utils.StateModel import NewPost
@@ -12,11 +13,13 @@ from Utils.other import request_sender, post_moderation
 
 create_post_router = Router()
 
-create_post_router.message.middleware(AddUserMiddleware())
-create_post_router.callback_query.middleware(AddUserMiddleware())
+
 create_post_router.message.middleware(CheckBlackListMiddleWare())
 create_post_router.callback_query.middleware(CheckBlackListMiddleWare())
-
+create_post_router.message.middleware(AddUserMiddleware())
+create_post_router.callback_query.middleware(AddUserMiddleware())
+create_post_router.message.middleware(SubscriptionVerificationMiddleware())
+create_post_router.callback_query.middleware(SubscriptionVerificationMiddleware())
 
 
 @create_post_router.message(~F.text)
