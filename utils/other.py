@@ -4,7 +4,7 @@ from aiogram import Bot
 from utils.bot_instance import bot
 from aiogram.fsm.state import State
 from apscheduler.jobstores.base import JobLookupError
-from DataBase.message_object import MessageObject
+from database.message_object import MessageObject
 from utils.config import r, action_orm, gpt_key,scheduler, orm_posts, orm_messages, storage, main_chat
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey

@@ -5,10 +5,8 @@ from dotenv import load_dotenv
 import os
 from redis import Redis
 from openai import OpenAI
-
-
-from DataBase.base_model import MessageModel
-from DataBase.crud import UserManagementBase, PostManagementBase, MessageManagementBase
+from database.base_model import MessageModel
+from database.crud import UserManagementBase, PostManagementBase, MessageManagementBase
 from aiogram.fsm.storage.redis import RedisStorage
 
 load_dotenv()

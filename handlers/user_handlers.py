@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram import F
-from DataBase.message_object import MessageObject
-from DataBase.post_object import PostObject
+from database.message_object import MessageObject
+from database.post_object import PostObject
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
 from middlewares.pending_confirmation_middlewares import CheckPendingConfirmMiddleware

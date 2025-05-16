@@ -1,5 +1,5 @@
 from handlers import user_handlers, new_post_handlers, admin_handlers
-from DataBase.base_model import create_tables
+from database.base_model import create_tables
 from utils.schedule_tasks import scheduler
 from utils.bot_instance import dp, bot
 import asyncio
@@ -10,7 +10,7 @@ async def main():
 
     dp.include_router(user_handlers.user_router)
     dp.include_router(admin_handlers.admin_router)
-    dp.include_router(createNewPostHandlers.create_post_router)
+    dp.include_router(new_post_handlers.create_post_router)
     await create_tables()
     scheduler.start()
 
