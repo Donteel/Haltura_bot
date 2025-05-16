@@ -5,16 +5,16 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram import F
 from sqlalchemy.testing.plugin.plugin_base import logging
 
-from MiddleWares.AddUserMiddleWare import AddUserMiddleware
-from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
-from MiddleWares.SubscriptionVerification import SubscriptionVerificationMiddleware
-from Utils.Keyboards import *
+from middlewares.add_user_middleware import AddUserMiddleware
+from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
+from middlewares.subscription_verification import SubscriptionVerificationMiddleware
+from utils.keyboards import *
 from aiogram import Router
-from Utils.StateModel import AdminState
-from Utils.bot_instance import bot
-from Utils.config import action_orm, main_chat, orm_posts
+from utils.state_models import AdminState
+from utils.bot_instance import bot
+from utils.config import action_orm, main_chat, orm_posts
 from aiogram.fsm.context import FSMContext
-from Utils.other import state_for_user, schedule_cancel, post_publication, change_admin_message
+from utils.other import state_for_user, schedule_cancel, post_publication, change_admin_message
 
 admin_router = Router()
 
@@ -167,7 +167,6 @@ async def delete_and_block(callback: CallbackQuery,state: FSMContext):
     await delete_post(callback,state)
 
     await callback.answer('Пользователь добавлен в черный список!',show_alert=True)
-
 
 
 # рассылка пользователям

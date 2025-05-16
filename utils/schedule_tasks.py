@@ -1,6 +1,6 @@
 from apscheduler.triggers.cron import CronTrigger
-from Utils.other import channel_message
-from Utils.config import scheduler
+from utils.other import channel_message
+from utils.config import scheduler
 import zoneinfo
 
 time_zone = zoneinfo.ZoneInfo('Europe/Moscow')

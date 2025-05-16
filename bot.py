@@ -1,7 +1,7 @@
-from Handlers import user_handlers, createNewPostHandlers, admin_handlers
-from DataBase.BaseModel import create_tables
-from Utils.ScheduleTasks import scheduler
-from Utils.bot_instance import dp, bot
+from handlers import user_handlers, new_post_handlers, admin_handlers
+from DataBase.base_model import create_tables
+from utils.schedule_tasks import scheduler
+from utils.bot_instance import dp, bot
 import asyncio
 import logging
 

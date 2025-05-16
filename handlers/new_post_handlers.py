@@ -1,14 +1,14 @@
 from aiogram.types import Message
 from aiogram import F
-from Handlers.user_handlers import awaiting_post
-from MiddleWares.AddUserMiddleWare import AddUserMiddleware
-from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
-from MiddleWares.SubscriptionVerification import SubscriptionVerificationMiddleware
-from Utils.Keyboards import *
+from handlers.user_handlers import awaiting_post
+from middlewares.add_user_middleware import AddUserMiddleware
+from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
+from middlewares.subscription_verification import SubscriptionVerificationMiddleware
+from utils.keyboards import *
 from aiogram import Router
-from Utils.StateModel import NewPost
+from utils.state_models import NewPost
 from aiogram.fsm.context import FSMContext
-from Utils.other import request_sender, post_moderation
+from utils.other import request_sender, post_moderation
 
 
 create_post_router = Router()

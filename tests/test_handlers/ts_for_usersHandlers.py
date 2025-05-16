@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock
 
-from Handlers.user_handlers import start
-from Utils.Keyboards import btn_home
+from handlers.user_handlers import start
+from utils.keyboards import btn_home
 
 
 # @pytest.mark.asyncio

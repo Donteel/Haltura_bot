@@ -2,7 +2,7 @@ import logging
 from typing import Callable, Dict, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject, Message, CallbackQuery
-from Utils.config import action_orm
+from utils.config import action_orm
 
 
 class AddUserMiddleware(BaseMiddleware):

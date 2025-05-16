@@ -7,8 +7,8 @@ from redis import Redis
 from openai import OpenAI
 
 
-from DataBase.BaseModel import MessageModel
-from DataBase.ORM import UserManagementBase, PostManagementBase, MessageManagementBase
+from DataBase.base_model import MessageModel
+from DataBase.crud import UserManagementBase, PostManagementBase, MessageManagementBase
 from aiogram.fsm.storage.redis import RedisStorage
 
 load_dotenv()

@@ -4,11 +4,11 @@ from typing import Sequence, Optional
 from sqlalchemy import and_, Row
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
-from DataBase.BaseModel import UserModel, engine,PostModel, AdminModel, BlackListModel, MessageModel
+from DataBase.base_model import UserModel, engine,PostModel, AdminModel, BlackListModel, MessageModel
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
-from DataBase.MessageObject import MessageObject
-from DataBase.postObject import PostObject
-from DataBase.userObject import UserObject
+from DataBase.message_object import MessageObject
+from DataBase.post_object import PostObject
+from DataBase.user_object import UserObject
 
 AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 

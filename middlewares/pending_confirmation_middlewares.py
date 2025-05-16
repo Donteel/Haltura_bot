@@ -2,8 +2,8 @@ import logging
 from typing import Callable, Any, Dict, Awaitable
 from aiogram.types import TelegramObject, Message
 from aiogram import BaseMiddleware
-from Utils.StateModel import NewPost
-from Utils.other import state_for_user
+from utils.state_models import NewPost
+from utils.other import state_for_user
 
 
 class CheckPendingConfirmMiddleware(BaseMiddleware):

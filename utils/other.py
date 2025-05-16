@@ -1,15 +1,15 @@
 import logging
 from aiogram.exceptions import TelegramBadRequest
 from aiogram import Bot
-from Utils.bot_instance import bot
+from utils.bot_instance import bot
 from aiogram.fsm.state import State
 from apscheduler.jobstores.base import JobLookupError
-from DataBase.MessageObject import MessageObject
-from Utils.config import r, action_orm, gpt_key,scheduler, orm_posts, orm_messages, storage, main_chat
+from DataBase.message_object import MessageObject
+from utils.config import r, action_orm, gpt_key,scheduler, orm_posts, orm_messages, storage, main_chat
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from Utils.Keyboards import btn_plug, btn_home, btn_moderation
+from utils.keyboards import btn_plug, btn_home, btn_moderation
 from openai import OpenAI
 
 

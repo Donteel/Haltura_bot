@@ -5,10 +5,10 @@ from aiogram.exceptions import TelegramForbiddenError
 from aiogram.types import TelegramObject, Message, CallbackQuery
 from aiogram import BaseMiddleware
 
-from Utils.Keyboards import btn_link, btn_subscribe
-from Utils.config import main_chat
-from Utils.bot_instance import bot
-from Utils.other import check_member_status
+from utils.keyboards import btn_link, btn_subscribe
+from utils.config import main_chat
+from utils.bot_instance import bot
+from utils.other import check_member_status
 
 
 class SubscriptionVerificationMiddleware(BaseMiddleware):

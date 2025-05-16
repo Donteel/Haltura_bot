@@ -4,23 +4,23 @@ from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram import F
-from DataBase.MessageObject import MessageObject
-from DataBase.postObject import PostObject
-from MiddleWares.AddUserMiddleWare import AddUserMiddleware
-from MiddleWares.BlackListMiddleWares import CheckBlackListMiddleWare
-from MiddleWares.PendingConfirmaionMiddleWares import CheckPendingConfirmMiddleware
-from MiddleWares.SpamProtections import SpamProtected
-from MiddleWares.SubscriptionVerification import SubscriptionVerificationMiddleware
-from Utils.Keyboards import *
+from DataBase.message_object import MessageObject
+from DataBase.post_object import PostObject
+from middlewares.add_user_middleware import AddUserMiddleware
+from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
+from middlewares.pending_confirmation_middlewares import CheckPendingConfirmMiddleware
+from middlewares.spam_protections import SpamProtected
+from middlewares.subscription_verification import SubscriptionVerificationMiddleware
+from utils.keyboards import *
 from aiogram import Router
 from aiogram.filters import Command
-from Utils.bot_instance import bot
-from Utils.config import scheduler, r, orm_posts, orm_messages
-from Utils.ScheduleTasks import time_zone
-from Utils.StateModel import NewPost, DeactivatePostState
-from Utils.config import action_orm, main_chat
+from utils.bot_instance import bot
+from utils.config import scheduler, r, orm_posts, orm_messages
+from utils.schedule_tasks import time_zone
+from utils.state_models import NewPost, DeactivatePostState
+from utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
-from Utils.other import request_sender, post_moderation, post_publication, admin_broadcast, check_member_status
+from utils.other import request_sender, post_moderation, post_publication, admin_broadcast, check_member_status
 
 user_router = Router()
 

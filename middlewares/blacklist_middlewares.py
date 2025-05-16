@@ -2,7 +2,7 @@ import logging
 from typing import Callable, Any, Dict, Awaitable
 from aiogram.types import TelegramObject, Message, CallbackQuery
 from aiogram import BaseMiddleware
-from Utils.config import action_orm
+from utils.config import action_orm
 
 
 class CheckBlackListMiddleWare(BaseMiddleware):
