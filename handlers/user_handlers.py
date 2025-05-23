@@ -84,7 +84,7 @@ async def create_post(message: Message,state:FSMContext):
     logging.info(f'Пользователь {message.from_user.id} активировал кнопку публикации готового поста')
 
 
-@user_router.message(F.text == '❌ Закрыть пост')
+@user_router.message(F.text == '❌ Закрыть вакансию')
 async def create_post(message: Message,state:FSMContext):
 
     await message.answer('Введите ID сообщение полученное при публикации',reply_markup=btn_cancel())
