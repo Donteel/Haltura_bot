@@ -5,7 +5,6 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram import F
 from database.message_object import MessageObject
-from database.post_object import PostObject
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
 from middlewares.pending_confirmation_middlewares import CheckPendingConfirmMiddleware
@@ -15,12 +14,12 @@ from utils.keyboards import *
 from aiogram import Router
 from aiogram.filters import Command
 from utils.bot_instance import bot
-from utils.config import scheduler, r, orm_posts, orm_messages
+from utils.config import scheduler, orm_posts, orm_messages
 from utils.schedule_tasks import time_zone
 from utils.state_models import NewPost, DeactivatePostState
 from utils.config import action_orm, main_chat
 from aiogram.fsm.context import FSMContext
-from utils.other import request_sender, post_moderation, post_publication, admin_broadcast, check_member_status
+from utils.other import request_sender, post_moderation, post_publication, check_member_status
 
 user_router = Router()
 
@@ -42,7 +41,7 @@ user_router.callback_query.middleware(SubscriptionVerificationMiddleware())
 async def start(message: Message):
 
 
-    await message.answer('Добро пожаловать в Халтура бот,выбери действие.'
+    await message.answer('Как вы хотите отправить вакансию?'
                         ,reply_markup=btn_home())
 
 
@@ -72,7 +71,7 @@ async def help_func(message: Message):
                         )
 
 
-@user_router.message(F.text == '📢 Опубликовать готовый пост')
+@user_router.message(F.text == '📤 Отправить готовую')
 async def create_post(message: Message,state:FSMContext):
 
     await message.answer('<b>Отправь готовый пост в формате <u>текста!</u></b>\n'

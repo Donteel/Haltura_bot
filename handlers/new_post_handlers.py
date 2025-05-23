@@ -27,13 +27,13 @@ async def type_message_error(message: Message):
     await message.answer('Я понимаю только текст!')
 
 
-@create_post_router.message(F.text == '❌ Отменить создание')
+@create_post_router.message(F.text == '❌ Закрыть вакансию')
 async def cancel_create(message: Message,state: FSMContext):
     await state.clear()
     await message.answer('Создание отменено',reply_markup=btn_home())
 
 
-@create_post_router.message(F.text == "📝 Создать пост по шаблону")
+@create_post_router.message(F.text == "📝 Создать вручную")
 async def start_creating(message: Message,state: FSMContext):
     await message.answer(
         '<b>Начнем создание поста!</b>\n\n'

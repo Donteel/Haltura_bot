@@ -19,9 +19,9 @@ def create_inline_keyboard(buttons: tuple | list,adjust: int|list=1):
 
 def btn_home():
 
-    btn_1 = KeyboardButton(text='📢 Опубликовать готовый пост')
-    btn_2 = KeyboardButton(text='📝 Создать пост по шаблону')
-    btn_3 = KeyboardButton(text='❌ Закрыть пост')
+    btn_1 = KeyboardButton(text='📤 Отправить готовую')
+    btn_2 = KeyboardButton(text='📝 Создать вручную')
+    btn_3 = KeyboardButton(text='❌ Закрыть вакансию')
     btn_4 = KeyboardButton(text='📜 Правила')
 
     return create_reply_keyboard((btn_1, btn_2, btn_3, btn_4))
