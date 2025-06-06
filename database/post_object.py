@@ -24,7 +24,7 @@ class PostObject(BaseModel):
     user_id: Optional[int] = Field(default=None, description="ID пользователя, создавшего пост")
     username: Optional[str] = Field(default=None, description="Имя пользователя")
     post_text: Optional[str] = Field(default=None, description="Содержимое публикации")
-    post_id: Optional[int] = Field(default=None, description="ID связанного сообщения (не для TempPost)")
+    message_id: Optional[int] = Field(default=None, description="ID связанного сообщения (не для TempPost)")
     temp_id: Optional[int] = Field(default=None, description="ID записи в бд (для TempPost)")
     status: Optional[str] = Field(default="pending", description="Статус публикации (pending,canceled,published)")
     job_id: Optional[str] = Field(default=None,description="id задачи на публикацию")

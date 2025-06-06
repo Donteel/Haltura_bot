@@ -95,24 +95,28 @@ async def create_post(message: Message,state:FSMContext):
 @user_router.message(DeactivatePostState.waiting_post_id, F.text)
 async def deactivate_post(message: Message,state:FSMContext):
     try:
-        post_id = int(message.text)
+        # получаем post_id пользователя для удаления
+        msg_id = int(message.text)
     except ValueError:
         await message.answer('Нужно отправить номер сообщения без букв,пробелов и любых знаков!')
         return
     else:
 
-        if post_data:= await orm_posts.get_post(post_id=post_id,
+        # проверяем есть ли такой пост в базе данных
+        if post_data:= await orm_posts.check_post_by_msg_id(message_id=msg_id,
                                                 user_id=message.chat.id):
 
             try:
-                await message.bot.edit_message_text(text=f"{post_data.post_text}\n ВАКАНСИЯ ЗАКРЫТА❌",
-                                                    chat_id=int(main_chat),
-                                                    message_id=int(post_data.post_id)
-                                                    )
+                # изменяем сообщение
+                await message.bot.edit_message_text(
+                    text=f"<s>{post_data.post_text}</s>\n\n ВАКАНСИЯ ЗАКРЫТА❌",
+                    chat_id=int(main_chat),
+                    message_id=int(post_data.message_id)
+                )
+
+                # меняем статус поста в базе данных
                 await orm_posts.post_deactivate(
-                    user_id=int(message.from_user.id),
-                    post_id=int(post_data.post_id
-                        )
+                    post_id=int(post_data.id)
                 )
                 await message.answer('Сообщение успешно деактивировано',
                                      reply_markup=btn_home()

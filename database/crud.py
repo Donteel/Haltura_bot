@@ -174,6 +174,20 @@ class PostManagementBase:
             return PostObject.model_validate(data.__dict__)
         return None
 
+
+    @with_session
+    async def check_post_by_msg_id(self,session: AsyncSession, message_id,user_id):
+        stmt = await session.execute(
+            select(PostModel).where(
+                and_(PostModel.message_id == message_id,PostModel.user_id == user_id)
+            )
+        )
+
+        if data := stmt.scalars().first():
+            return PostObject.model_validate(data.__dict__)
+        return None
+
+
     @with_session
     async def addJobId_to_post(self,session: AsyncSession,post_id:int,job_id: str):
         """
@@ -234,9 +248,6 @@ class PostManagementBase:
         await session.rollback()
         return False
 
-    @with_session
-    @with_session
-    @with_session
 
     @with_session
     async def post_deactivate(self,session: AsyncSession,post_id):
