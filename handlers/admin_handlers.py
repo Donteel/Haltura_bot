@@ -4,7 +4,6 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram import F
 from sqlalchemy.testing.plugin.plugin_base import logging
-
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
 from middlewares.subscription_verification import SubscriptionVerificationMiddleware
@@ -15,6 +14,7 @@ from utils.bot_instance import bot
 from utils.config import action_orm, main_chat, orm_posts
 from aiogram.fsm.context import FSMContext
 from utils.other import state_for_user, schedule_cancel, post_publication, change_admin_message
+
 
 admin_router = Router()
 
@@ -110,11 +110,14 @@ async def cancel_posting(callback: CallbackQuery,state: FSMContext):
 
 
     if schedule_cancel(post.job_id):
+
         admins_data = await action_orm.get_admins_id()
+
         await change_admin_message(admins_data=admins_data,
                                    post_id=int(post_id),
                                    verdict='postCancel'
                                    )
+
         await bot.send_message(text='<b>Ваша публикация отменена администратором!</b>\n'
                                     'подробнее - /help',
                                chat_id=post.user_id

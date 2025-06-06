@@ -1,3 +1,5 @@
+from random import random, randint
+
 from aiogram.types import KeyboardButton, InlineKeyboardButton
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 import logging
@@ -71,7 +73,7 @@ def btn_approval(post_id):
 
 def btn_plug(verdict):
 
-    btn_1 = InlineKeyboardButton(text=f'{verdict}',callback_data="plug")
+    btn_1 = InlineKeyboardButton(text=f'{verdict}',callback_data=f"plug_{randint(99,9999)}")
 
     return create_inline_keyboard([[btn_1],])
 

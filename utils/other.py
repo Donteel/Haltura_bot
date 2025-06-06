@@ -170,8 +170,8 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
     Функция изменяет сообщение у администраторов
      на конкретный пост в зависимости от вердикта администратора.
 
-    :param admins_data: список id администраторов
-    :param post_id: id  записи в бд
+    :param admins_data: Список id администраторов
+    :param post_id: id записи в бд
     :param verdict: вердикт администратора
     :return: bool
     """
@@ -187,9 +187,11 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
 
         verdict_text = verdicts[verdict]
 
-        await bot.edit_message_reply_markup(chat_id=admin,
-                                      message_id=ms_obj.message_id,
-                                      reply_markup=btn_plug(f"{verdict_text}!"))
+        await bot.edit_message_reply_markup(
+            chat_id=admin,
+            message_id=ms_obj.message_id,
+            reply_markup=btn_plug(f"{verdict_text}!")
+        )
 
 
 async def check_member_status(bot_obj: Bot,user_id: int, group_id: int) -> bool:
@@ -206,7 +208,7 @@ async def check_member_status(bot_obj: Bot,user_id: int, group_id: int) -> bool:
 
 
 # AI модерация вакансий
-async def post_moderation(post_text):
+async def post_moderation(post_text:str) -> bool | list[str] | int:
 
     gpt_client = OpenAI(api_key=gpt_key)
     try:
@@ -216,13 +218,23 @@ async def post_moderation(post_text):
                 {"role":"system",
                  "content":
                      "Ты система которая определяет является ли текст вакансией.\n"
-                     "Ты можешь отвечать только числами 0 или 1.\n"
-                     "Твоя задача определять является ли текст пользователя вакансией.\n"
-                     "Ты проверяешь указаны ли следующие пункты в вакансии:\n"
-                     "Обязательно: обязанности, адрес, контактные данные.\n"
-                     "Опционально: оплата."
-                     "Запрещено: реклама, курьеры, фриланс, регистрации, фин. операции.\n, сомнительные вакансии."
-                     "Если текст не относится к вакансии или нарушены правила вакансии ты должен отправить 0 а если все в порядке то 1"
+                     "Твоя задача — проанализировать текст и проверить, содержит ли он обязательные элементы и не нарушает ли запреты.\n"
+                     "Что должно быть:\n"
+                     "Обязанности (чёткое описание задач), "
+                     "Адрес (место работы или встречи), "
+                     "Контакты (любой способ связи), "
+                     "Оплата (размер и формат оплаты).\n"
+                     "Запрещено:\n"
+                     "Реклама и афиши, "
+                     "курьеры известных доставок(яндекс и т.п)"
+                     "фриланс, "
+                     "регистрации, "
+                     "фин. операции, "
+                     "серые вакансии.\n"
+                     "Если в тексте есть нарушение, выведи ответ в формате: 0_Краткая причина нарушения.\n"
+                     "Если всё соответствует правилам, выведи только: 1\n"
+                     "Важно: ответ должен содержать только одну строку — либо 0_причина, либо 1, без дополнительных пояснений."
+
                  },
                 {"role":"user",
                  "content":post_text}
@@ -231,10 +243,13 @@ async def post_moderation(post_text):
         logging.info(f'Вакансия - {post_text}\n'
                      f'Вердикт модели - {completion.choices[0].message.content}')
 
-        if completion.choices[0].message.content == "1":
-            return True
+        result = completion.choices[0].message.content
+
+        if result == "1":
+            return int(result)
         else:
-            return False
+            return result.split('_')
+
     except Exception as e:
         await admin_broadcast(await action_orm.get_admins_id(),
                               "Бот получил ошибку из за которой не смог проверить вакансию.\n"

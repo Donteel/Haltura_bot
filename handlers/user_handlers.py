@@ -109,7 +109,8 @@ async def deactivate_post(message: Message,state:FSMContext):
             try:
                 # изменяем сообщение
                 await message.bot.edit_message_text(
-                    text=f"<s>{post_data.post_text}</s>\n\n ВАКАНСИЯ ЗАКРЫТА❌",
+                    text=f"<s>{post_data.post_text}</s>\n\n"
+                         f" [ВАКАНСИЯ ЗАКРЫТА❌]",
                     chat_id=int(main_chat),
                     message_id=int(post_data.message_id)
                 )
@@ -144,14 +145,17 @@ async def awaiting_post(message: Message):
 # обработка готовой вакансии от пользователя
 @user_router.message(F.text,NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message,state:FSMContext):
-    await message.answer('Сейчас я проверю твою вакансию...')
+    await message.answer('🤖 Вакансия проходит проверку...')
 
     username = message.from_user.username or "Неизвестно"
     admin_data = await action_orm.get_admins_id()
     user_data = await state.get_data()
     post_text = user_data.get('post_text',message.text)
 
-    if await post_moderation(post_text):
+    ai_verification = await post_moderation(post_text)
+
+    # проверяет на положительный ответ
+    if isinstance(ai_verification,int):
 
         # создать  запись в бд
         post_id = await orm_posts.create_new_post(user_id=message.chat.id,
@@ -171,8 +175,9 @@ async def awaiting_post(message: Message,state:FSMContext):
         await orm_posts.addJobId_to_post(post_id,task_data.id)
 
         # уведомить пользователя
-        await message.answer("Всё в порядке!\n"
-                             "Вакансия будет опубликована через 5 минут. Спасибо, что остаётесь нами!",
+        await message.answer("<b>Всё в порядке!</b>\n"
+                             "Вакансия будет опубликована через 5 минут.\n"
+                             "Спасибо, что остаётесь нами!",
                              reply_markup=btn_home()
                              )
 
@@ -184,12 +189,37 @@ async def awaiting_post(message: Message,state:FSMContext):
         # удалить временные данные
         await state.clear()
 
-    else:
-        # добавить вакансию во временную базу данных
+    # проверяет на отрицательный ответ с причиной
+    elif isinstance(ai_verification,list):
+
+        ai_verdict = ai_verification[1]
+
+        await message.answer(
+            '<b>Ваша вакансия не прошла проверку</b>\n'
+                 '<b>[Причина]</b>:\n\n'
+                f'<i>{ai_verdict}</i>\n\n'
+                f'Устраните проблемы и повторите отправку. '
+                f'Eсли причина вам не ясна обратитесь к администратору по команде /help .',
+                 reply_markup=btn_home()
+        )
+
+        for admin in admin_data:
+            await bot.send_message(
+                text=f"<b>[Я отменил вакансию]</b>\n"
+                     f"<b>[Отправитель]</b> - @{username}\n"
+                     f"<b>[Текст вакансии]:</b>\n\n"
+                     f"<i>{post_text}</i>",
+                chat_id=admin,
+                reply_markup=ReplyKeyboardRemove()
+            )
+
+    # проверяет на False
+    elif not ai_verification:
+        # добавить вакансию базу данных
         post_id = await orm_posts.create_new_post(user_id=message.chat.id,
-                                                   username=username,
-                                                   post_text=post_text,
-                                                   )
+                                                  username=username,
+                                                  post_text=post_text
+                                                  )
 
         # отправить вакансию на одобрение администраторам
         for admin in admin_data:
