@@ -226,6 +226,7 @@ class PostManagementBase:
             return True
         return False
 
+
     @with_session
     async def remove_post(self,session: AsyncSession,post_id):
         stmt = await session.execute(select(PostModel).where(PostModel.id == post_id))
@@ -236,6 +237,7 @@ class PostManagementBase:
             return True
         await session.rollback()
         return False
+
 
     @with_session
     async def changeStatus(self,session: AsyncSession,post_id,status):
@@ -287,7 +289,7 @@ class MessageManagementBase:
     async def add_message_data(self,session: AsyncSession,ms_obj: MessageObject)-> bool:
 
         message_data = MessageModel(admin_id=ms_obj.admin_id,
-                                    post_id=ms_obj.temp_id,
+                                    post_id=ms_obj.post_id,
                                     message_id=ms_obj.message_id)
         try:
             session.add(message_data)

@@ -204,7 +204,7 @@ async def awaiting_post(message: Message,state:FSMContext):
 
             # сохранить messages администраторов
             admin_message = MessageObject(admin_id=admin,
-                                          temp_id=post_id,
+                                          post_id=post_id,
                                           message_id=ms_obj.message_id
                                           )
 
