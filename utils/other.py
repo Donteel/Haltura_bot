@@ -99,6 +99,7 @@ async def request_sender(admin_data:list[int],post_id: int) -> None:
                 reply_markup= btn_moderation(post.id)
             )
 
+        logging.info(f"номер целевого сообщения {message_obj.message_id} для {admin}")
         # сохранить данные отправленных заявок для возможного изменения
 
         admin_message = MessageObject(admin_id=admin,
@@ -183,14 +184,18 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
 
     for admin in admins_data:
 
-        ms_obj = await orm_messages.get_message(admin,int(post_id))
+        ms_obj = await orm_messages.get_message(admin_id=admin,
+                                                post_id=int(post_id)
+                                                )
 
         verdict_text = verdicts[verdict]
+
+        logging.info(f'Меняем клавиатуру для администраторов, ID изменяемого сообщения {ms_obj.message_id} для {admin}')
 
         await bot.edit_message_reply_markup(
             chat_id=admin,
             message_id=ms_obj.message_id,
-            reply_markup=btn_plug(f"{verdict_text}!")
+            reply_markup=btn_plug(verdict_text)
         )
 
 
@@ -219,19 +224,17 @@ async def post_moderation(post_text:str) -> bool | list[str] | int:
                  "content":
                      "Ты система которая определяет является ли текст вакансией.\n"
                      "Твоя задача — проанализировать текст и проверить, содержит ли он обязательные элементы и не нарушает ли запреты.\n"
-                     "Что должно быть:\n"
-                     "Обязанности (чёткое описание задач), "
-                     "Адрес (место работы или встречи), "
+                     "Обязательные пункты:\n"
+                     "Обязанности или вид деятельности, "
                      "Контакты (любой способ связи), "
                      "Оплата (размер и формат оплаты).\n"
                      "Запрещено:\n"
-                     "Реклама и афиши, "
-                     "курьеры известных доставок(яндекс и т.п)"
-                     "фриланс, "
-                     "регистрации, "
-                     "фин. операции, "
+                     "Рекламные посты или Афиши, "
+                     "Партнёрская занятость(яндекс такси, доставщики и прочее), "
+                     "фриланс, работа на удаленке "
+                     "регистрации или фин. операции, "
                      "серые вакансии.\n"
-                     "Если в тексте есть нарушение, выведи ответ в формате: 0_Краткая причина нарушения.\n"
+                     "Если в тексте есть нарушение, выведи ответ в формате: 0_Причина нарушения.\n"
                      "Если всё соответствует правилам, выведи только: 1\n"
                      "Важно: ответ должен содержать только одну строку — либо 0_причина, либо 1, без дополнительных пояснений."
 

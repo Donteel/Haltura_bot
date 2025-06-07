@@ -152,10 +152,18 @@ class PostManagementBase:
             username=username
         )
 
+
         try:
+
+            logging.info('Добавляю новую вакансию от пользователя\n'
+                         f'{user_id} - {username}'
+                         )
+
             session.add(post)
             await session.commit()
+            logging.info(f'Возвращаю ID вакансии который указан в db - {post.id}')
             return post.id
+
         except Exception as e:
             logging.error(e)
             await session.rollback()
@@ -285,6 +293,10 @@ class MessageManagementBase:
 
     @with_session
     async def add_message_data(self,session: AsyncSession,ms_obj: MessageObject)-> bool:
+        logging.info('Добавление данных о сообщении.\n'
+                     f'admin_id - {ms_obj.admin_id}\n'
+                     f'post_id - {ms_obj.temp_id}\n'
+                     f'message_id - {ms_obj.message_id}\n')
 
         message_data = MessageModel(admin_id=ms_obj.admin_id,
                                     post_id=ms_obj.temp_id,
@@ -301,9 +313,16 @@ class MessageManagementBase:
 
     @with_session
     async def get_message(self,session: AsyncSession, admin_id: int,post_id: int) -> Optional[MessageObject] | None:
+
+        logging.info('Получаем нужное сообщение для администратора'
+                     f'admin_id - {admin_id}\n'
+                     f'post_id - {post_id}\n')
         stmt = await session.execute(
             select(MessageModel).where(
-                and_(MessageModel.admin_id == admin_id,MessageModel.post_id == post_id)))
+                and_(MessageModel.admin_id == admin_id,MessageModel.id == post_id)))
         result = stmt.scalars().first()
         if result:
+            logging.info(f'Полученные данные:\n'
+                         f'message_id - {result.message_id}\n'
+                         f'admin_id - {result.admin_id}\n')
             return MessageObject.model_validate(result.__dict__)

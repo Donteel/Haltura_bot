@@ -105,28 +105,35 @@ async def cancel_post(message:Message, state: FSMContext):
 
 @admin_router.callback_query(F.data.startswith('postingCancel'))
 async def cancel_posting(callback: CallbackQuery,state: FSMContext):
+
+    # админ отменяет вакансию
     callback_text,post_id = callback.data.split('_')
+
     post = await orm_posts.get_post(int(post_id))
 
 
-    if schedule_cancel(post.job_id):
+    try:
 
-        admins_data = await action_orm.get_admins_id()
+        if schedule_cancel(post.job_id):
 
-        await change_admin_message(admins_data=admins_data,
-                                   post_id=int(post_id),
-                                   verdict='postCancel'
+            admins_data = await action_orm.get_admins_id()
+
+            await change_admin_message(admins_data=admins_data,
+                                       post_id=int(post_id),
+                                       verdict='postCancel'
+                                       )
+
+            await bot.send_message(text='<b>Ваша публикация отменена администратором!</b>\n'
+                                        'подробнее - /help',
+                                   chat_id=post.user_id
                                    )
-
-        await bot.send_message(text='<b>Ваша публикация отменена администратором!</b>\n'
-                                    'подробнее - /help',
-                               chat_id=post.user_id
-                               )
-        await orm_posts.remove_post(int(post_id))
-        await state.clear()
-        await callback.answer("Вакансия успешно отменена!")
-    else:
-        await callback.answer('Публикация уже опубликована или отменена ранее.')
+            await orm_posts.remove_post(int(post_id))
+            await state.clear()
+            await callback.answer("Вакансия успешно отменена!")
+        else:
+            await callback.answer('Публикация уже опубликована или отменена ранее.')
+    except Exception as e:
+        logging.error('Ошибка:',e)
 
 
 @admin_router.callback_query(F.data.startswith('cancelAndBlock'))

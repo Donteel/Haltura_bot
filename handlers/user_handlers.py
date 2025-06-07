@@ -145,6 +145,7 @@ async def awaiting_post(message: Message):
 # обработка готовой вакансии от пользователя
 @user_router.message(F.text,NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message,state:FSMContext):
+
     await message.answer('🤖 Вакансия проходит проверку...')
 
     username = message.from_user.username or "Неизвестно"
@@ -162,6 +163,8 @@ async def awaiting_post(message: Message,state:FSMContext):
                                                    username=username,
                                                    post_text=post_text
                                                    )
+
+        logging.info(f'ID нового поста в BD {post_id}')
 
         # Добавляем задачу на публикацию нового поста в канал
         task_data = scheduler.add_job(

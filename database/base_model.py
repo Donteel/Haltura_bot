@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncAttrs
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
 from sqlalchemy import ForeignKey, func, BigInteger
 
-engine = create_async_engine('sqlite+aiosqlite:///haltura_base.db',echo=True) # noqa
+engine = create_async_engine('sqlite+aiosqlite:///haltura_base.db') # noqa
 # Настройка движка и фабрики сессий
 AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
