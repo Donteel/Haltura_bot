@@ -132,29 +132,31 @@ async def cancel_posting_and_block(callback: CallbackQuery,state: FSMContext):
     callback_text, post_id = callback.data.split('_')
     post = await orm_posts.get_post(int(post_id))
 
-    if schedule_cancel(post.job_id):
+    try:
+        if schedule_cancel(post.job_id):
 
-        admins_data = await action_orm.get_admins_id()
+            admins_data = await action_orm.get_admins_id()
 
-        await change_admin_message(admins_data=admins_data,
-                                   post_id=int(post_id),
-                                   verdict=callback_text
+            await change_admin_message(admins_data=admins_data,
+                                       post_id=int(post_id),
+                                       verdict=callback_text
+                                       )
+
+            await action_orm.add_to_blacklist(post.user_id)
+
+            await bot.send_message(text='<b>Вы добавлены в черный список!</b>\n'
+                                        'Спасибо что были с нами!',
+                                   chat_id=post.user_id,
+                                   reply_markup=ReplyKeyboardRemove()
                                    )
 
-        await action_orm.add_to_blacklist(post.user_id)
+            await orm_posts.remove_post(int(post_id))
+            await state.clear()
 
-        await bot.send_message(text='<b>Вы добавлены в черный список!</b>\n'
-                                    'Спасибо что были с нами!',
-                               chat_id=post.user_id,
-                               reply_markup=ReplyKeyboardRemove()
-                               )
-
-        await orm_posts.remove_post(int(post_id))
-        await state.clear()
-
-    else:
-        await callback.answer('Публикация уже опубликована или отменена ранее.')
-
+        else:
+            await callback.answer('Публикация уже опубликована или отменена ранее.')
+    except AttributeError:
+        await callback.answer('Задача не найдена',show_alert=True)
     await callback.answer()
 
 

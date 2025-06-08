@@ -73,6 +73,7 @@ async def channel_message(message_text):
         logging.error(f'Произошла не предвиденная ошибка при отправке сообщения в группу\n {e}')
 
 
+# Функция для отправления заявки всем администраторам
 async def request_sender(admin_data:list[int],post_id: int) -> None:
 
     """
@@ -88,21 +89,20 @@ async def request_sender(admin_data:list[int],post_id: int) -> None:
 
         # отправка сообщения админам
 
-        message_obj = \
-            await bot.send_message(
-                chat_id=admin,
-                text="Новая вакансия от пользователя!\n"
-                     "<b>Будет опубликована через 5 минут.</b>\n\n"
-                     "<u>Текст вакансии:</u>\n"
-                     f"{post.post_text}\n\n"
-                     f"<u>Отправитель - @{post.username}</u>",
-                reply_markup= btn_moderation(post.id)
-            )
+        message_obj = await bot.send_message(
+            chat_id=admin,
+            text="Новая вакансия от пользователя!\n"
+                 "<b>Будет опубликована через 5 минут.</b>\n\n"
+                 "<u>Текст вакансии:</u>\n"
+                 f"{post.post_text}\n\n"
+                 f"<u>Отправитель - @{post.username}</u>",
+            reply_markup= btn_moderation(post.id)
+        )
 
         # сохранить данные отправленных заявок для возможного изменения
 
         admin_message = MessageObject(admin_id=admin,
-                                      temp_id=post.id,
+                                      post_id=post.id,
                                       message_id=message_obj.message_id
                                       )
 
@@ -127,7 +127,7 @@ async def admin_broadcast(admin_data:list[int],text:str,keyboard=btn_home) -> No
     logging.info("Сообщение с текстом:\n"
                  f"{text} отправлено {admin_count} админам")
 
-
+# Публикует пост в группу
 async def post_publication(chat_id:int,post_id) -> None:
     """
     Публикует пост в группу
@@ -165,13 +165,15 @@ async def post_publication(chat_id:int,post_id) -> None:
         return message_obj.message_id
 
 
+# Функция изменяет сообщение у администраторов
+# на конкретный пост в зависимости от вердикта администратора.
 async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> None:
     """
     Функция изменяет сообщение у администраторов
      на конкретный пост в зависимости от вердикта администратора.
 
     :param admins_data: список id администраторов
-    :param post_id: id  записи в бд
+    :param post_id: id записи в бд
     :param verdict: вердикт администратора
     :return: bool
     """
@@ -187,9 +189,11 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
 
         verdict_text = verdicts[verdict]
 
-        await bot.edit_message_reply_markup(chat_id=admin,
-                                      message_id=ms_obj.message_id,
-                                      reply_markup=btn_plug(f"{verdict_text}!"))
+        await bot.edit_message_reply_markup(
+            chat_id=admin,
+            message_id=ms_obj.message_id,
+            reply_markup=btn_plug(f"{verdict_text}!")
+        )
 
 
 async def check_member_status(bot_obj: Bot,user_id: int, group_id: int) -> bool:
@@ -219,10 +223,19 @@ async def post_moderation(post_text):
                      "Ты можешь отвечать только числами 0 или 1.\n"
                      "Твоя задача определять является ли текст пользователя вакансией.\n"
                      "Ты проверяешь указаны ли следующие пункты в вакансии:\n"
-                     "Обязательно: обязанности, адрес, контактные данные.\n"
-                     "Опционально: оплата."
-                     "Запрещено: реклама, курьеры, фриланс, регистрации, фин. операции.\n, сомнительные вакансии."
+                     "Обязательно: "
+                     "обязанности(хотя бы самое минимальное описание задач), "
+                     "адрес(указание полного адреса, места встречи или метро), "
+                     "контактные данные(номер телефона, телеграм или любые другие),\n"
+                     "оплата(указание часовой ставки или цены за рабочий день)"
+                     "Запрещено:"
+                     " реклама,"
+                     "любые вакансии на крупные компании по типу Yandex, Т-банк и подобных,"
+                     "фриланс(любые онлайн работы),"
+                     " регистрации, фин. операции.\n,"
+                     "сомнительные вакансии(завуалированные вакансии наркошопов, обнал и другие серые/черные схемы)"
                      "Если текст не относится к вакансии или нарушены правила вакансии ты должен отправить 0 а если все в порядке то 1"
+                     "Будь мягче к людям с  реальными хорошими вакансиями и строг к запрещенным видам вакансий."
                  },
                 {"role":"user",
                  "content":post_text}
