@@ -1,7 +1,9 @@
 import logging
+import zoneinfo
+from datetime import datetime
 from functools import wraps
 from typing import Sequence, Optional
-from sqlalchemy import and_, Row
+from sqlalchemy import and_, Row, func
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
 from database.base_model import UserModel, engine,PostModel, AdminModel, BlackListModel, MessageModel
@@ -160,6 +162,7 @@ class PostManagementBase:
             logging.error(e)
             await session.rollback()
 
+
     @with_session
     async def get_post(self,session: AsyncSession, post_id) -> Optional[PostObject | None]:
         """
@@ -269,6 +272,27 @@ class PostManagementBase:
         return result
 
 
+    @with_session
+    async def get_post_count(self,session: AsyncSession,user_id,):
+
+        now = datetime.now(zoneinfo.ZoneInfo('Europe/Moscow'))
+
+        # Просто создаем границы сегодняшнего дня
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_finish = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        stmt = await session.execute(
+            select(
+                func.count(PostModel.id)
+            ).where(
+                and_(
+                    PostModel.user_id == user_id,
+                     PostModel.created_at >= day_start,
+                     PostModel.created_at <= day_finish)
+            )
+        )
+
+        return stmt.scalar()
 
 
 class MessageManagementBase:
