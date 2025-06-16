@@ -14,6 +14,9 @@ class NewPost(StatesGroup):
     pending_confirmation = State()
 
 class AdminState(StatesGroup):
+    awaiting_quan_limits = State()
+    add_limit_state = State()
+    awaiting_action_for_limit = State()
     waiting_for_broadcast_ms = State()
     waiting_action = State()
     post_canceling = State()

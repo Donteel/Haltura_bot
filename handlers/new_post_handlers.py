@@ -4,6 +4,7 @@ from handlers.user_handlers import awaiting_post
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
 from middlewares.subscription_verification import SubscriptionVerificationMiddleware
+from utils.config import action_orm
 from utils.keyboards import *
 from aiogram import Router
 from utils.state_models import NewPost
@@ -35,12 +36,26 @@ async def cancel_create(message: Message,state: FSMContext):
 
 @create_post_router.message(F.text == "📝 Создать вручную")
 async def start_creating(message: Message,state: FSMContext):
-    await message.answer(
-        '<b>Начнем создание поста!</b>\n\n'
-        'Где предстоит работать? (название компании или локация к месту работы)',
-        reply_markup=btn_cancel_create()
-    )
-    await state.set_state(NewPost.company_name)
+    user_id = message.chat.id
+    daily_limit = await action_orm.get_user_limit(user_id)
+    extra_limit = await action_orm.get_extra_limit(user_id)
+
+    if daily_limit + extra_limit > 0:
+        await message.answer(
+            f'📄 [<i>Доступно публикаций: {daily_limit+extra_limit}</i>]\n\n'
+            f'<b>Начнем создание вакансии.!</b>\n\n'
+            'Где предстоит работать? (название компании или локация к месту работы)',
+            reply_markup=btn_cancel_create()
+        )
+        await state.set_state(NewPost.company_name)
+    else:
+        await message.answer(
+            "😊 <b>У вас закончились публикации.</b> \n"
+            "Вы можете купить дополнительные <i>лимиты</i> у администратора.\n\n"
+            f"<b> Ваш ID для покупки:</b> <code>{message.from_user.id}</code>",
+            reply_markup=btn_home()
+        )
+        await state.clear()
 
 @create_post_router.message(NewPost.company_name)
 async def waiting_name_company(message: Message,state:FSMContext):
@@ -145,5 +160,6 @@ async def awaiting_pending_confirmation(message: Message,state: FSMContext):
 # создание поста заново
 @create_post_router.message(NewPost.pending_confirmation,F.text == "🔄 Создать заново")
 async def reload_constructor(message: Message,state: FSMContext):
+
     await state.clear()
     await start_creating(message,state)

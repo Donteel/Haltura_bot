@@ -5,8 +5,10 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram import F
 from database.message_object import MessageObject
+from database.post_object import PostObject
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
+from middlewares.checklimit_middleware import CheckLimitMiddleware
 from middlewares.pending_confirmation_middlewares import CheckPendingConfirmMiddleware
 from middlewares.spam_protections import SpamProtected
 from middlewares.subscription_verification import SubscriptionVerificationMiddleware
@@ -32,6 +34,8 @@ user_router.message.middleware(SpamProtected(rate_limit=1))
 user_router.message.middleware(CheckPendingConfirmMiddleware())
 user_router.message.middleware(SubscriptionVerificationMiddleware())
 user_router.callback_query.middleware(SubscriptionVerificationMiddleware())
+user_router.message.middleware(CheckLimitMiddleware())
+
 
 # @user_router.message()
 # async def print_id(message):
@@ -44,6 +48,9 @@ async def start(message: Message):
     await message.answer('Как вы хотите отправить вакансию?'
                         ,reply_markup=btn_home())
 
+    post_count = await orm_posts.get_post_count(message.chat.id)
+
+    print(post_count)
 
 @user_router.message(F.text == '❌ Отменить')
 async def cancel_func(message: Message,state: FSMContext):
@@ -74,14 +81,29 @@ async def help_func(message: Message):
 @user_router.message(F.text == '📤 Отправить готовую')
 async def create_post(message: Message,state:FSMContext):
 
-    await message.answer('<b>Отправь готовый пост в формате <u>текста!</u></b>\n'
-                         'Оформив вакансию по правилам ее одобрят быстрее.',
-                         reply_markup=btn_cancel())
+    daily_limit = await action_orm.get_user_limit(message.chat.id)
+    extra_limit = await action_orm.get_extra_limit(message.chat.id)
 
-    await state.update_data(username=message.from_user.username)
+    if daily_limit>0 or extra_limit>0:
+        await message.answer("📤 Отправь готовую вакансию!\n"
+                             "👀 Оформив её по правилам, одобрение придёт быстрее.\n\n"
+                             f"📄 [<i>Доступно публикаций: {daily_limit+extra_limit}</i>]",
+                             reply_markup=btn_cancel())
 
-    await state.set_state(NewPost.awaiting_finished_post)
-    logging.info(f'Пользователь {message.from_user.id} активировал кнопку публикации готового поста')
+        await state.update_data(username=message.from_user.username)
+
+        await state.set_state(NewPost.awaiting_finished_post)
+        logging.info(f'Пользователь {message.from_user.id} активировал кнопку публикации готового поста')
+
+    else:
+
+        await message.answer(
+            "😊 <b>У вас закончились публикации.</b> \n"
+            "Вы можете купить дополнительные <i>лимиты</i> у администратора.\n\n"
+            f"<b> Ваш ID для покупки:</b> <code>{message.from_user.id}</code>",
+            reply_markup=btn_home()
+        )
+        await state.clear()
 
 
 @user_router.message(F.text == '❌ Закрыть вакансию')
@@ -144,6 +166,7 @@ async def awaiting_post(message: Message):
 # обработка готовой вакансии от пользователя
 @user_router.message(F.text,NewPost.awaiting_finished_post)
 async def awaiting_post(message: Message,state:FSMContext):
+
     await message.answer('Сейчас я проверю твою вакансию...')
 
     username = message.from_user.username or "Неизвестно"
@@ -158,6 +181,8 @@ async def awaiting_post(message: Message,state:FSMContext):
                                                    username=username,
                                                    post_text=post_text
                                                    )
+
+        logging.info(f"В базу данных был записан новый пост, вот его ID {post_id}")
 
         # Добавляем задачу на публикацию нового поста в канал
         task_data = scheduler.add_job(
@@ -176,6 +201,11 @@ async def awaiting_post(message: Message,state:FSMContext):
                              reply_markup=btn_home()
                              )
 
+        # отнимаем 1 публикацию пользователя
+        await action_orm.change_user_limit(user_id=message.chat.id,
+                                           post_id=post_id,
+                                           action="minus"
+                                           )
 
         # уведомить администраторов
         await request_sender(admin_data= await action_orm.get_admins_id(),

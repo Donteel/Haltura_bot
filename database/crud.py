@@ -3,11 +3,14 @@ import zoneinfo
 from datetime import datetime
 from functools import wraps
 from typing import Sequence, Optional
-from sqlalchemy import and_, Row, func
+from sqlalchemy import and_, Row,func
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
-from database.base_model import UserModel, engine,PostModel, AdminModel, BlackListModel, MessageModel
+from sqlalchemy.orm import Mapped
+from database.base_model import UserModel, engine, PostModel, AdminModel, BlackListModel, MessageModel, UserLimitsModel, \
+    ExtraLimitsModel, LimitLogsModel
 from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from database.limit_object import LimitObject
 from database.message_object import MessageObject
 from database.post_object import PostObject
 from database.user_object import UserObject
@@ -69,7 +72,14 @@ class UserManagementBase:
         else:
             return False
 
+    @staticmethod
+    async def get_day_range():
+        now = datetime.now(zoneinfo.ZoneInfo('Europe/Moscow'))
 
+        day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        day_finish = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        return day_start, day_finish
 
     @with_session
     async def get_users_ids(self, session: AsyncSession):
@@ -78,6 +88,7 @@ class UserManagementBase:
         logging.info('Я получил ID всех пользователей в таком формате:\n'
                      f'{result}')
         return result
+
 
     @with_session
     async def get_admins(self,session: AsyncSession) -> Sequence[Row[tuple[str, str]]]:
@@ -105,6 +116,7 @@ class UserManagementBase:
             await session.rollback()
             return False
 
+
     @with_session
     async def remove_from_blacklist(self,session: AsyncSession,tg_id):
         stmt = session.execute(select(BlackListModel).where(BlackListModel.user_id == tg_id))
@@ -119,6 +131,7 @@ class UserManagementBase:
                          )
             return False
 
+
     @with_session
     async def get_user_from_blacklist(self,session: AsyncSession,tg_id):
         stmt = await session.execute(select(BlackListModel).where(BlackListModel.user_id == tg_id))
@@ -127,6 +140,273 @@ class UserManagementBase:
             return False
         user = UserObject.model_validate(stmt.__dict__)
         return user
+
+
+    @with_session
+    async def create_user_limit(self,session: AsyncSession,user_id:int,limit:int) -> bool | int:
+
+        day_start, day_finish = await self.get_day_range()
+
+        # получить данные о лимите, и проверить последнюю дату обновления.
+        stmt = await session.execute(
+            select(UserLimitsModel).where(
+                UserLimitsModel.user_id == user_id
+            )
+        )
+
+        user_limit = stmt.scalar_one_or_none()
+
+        # если записей нет
+        if user_limit is None:
+            # если данных о лимите нет значит пользователя еще нет в таблице лимитов
+            # создаем новую запись и даем новые лимиты
+
+            new_limit = UserLimitsModel(user_id=user_id)
+            try:
+                session.add(new_limit)
+                await session.commit()
+                return new_limit.daily_limit
+
+            except IntegrityError as e:
+                await session.rollback()
+                logging.error('Ошибка при создании лимита для пользователя:\n\n'
+                              f'{e.__dict__}')
+                raise ValueError
+
+        # если запись есть, но она устарела
+
+        elif user_limit.created_at<day_start:
+
+            # обновляем лимиты и все
+            user_limit.daily_limit = limit
+            user_limit.created_at = datetime.now(zoneinfo.ZoneInfo('Europe/Moscow'))
+
+            try:
+                session.add(user_limit)
+                await session.commit()
+            except IntegrityError as e:
+                await session.rollback()
+                logging.error("Произошла ошибка обновления устаревшего лимита")
+                raise IntegrityError
+        else:
+            pass
+
+    @with_session
+    async def get_user_limit(self, session: AsyncSession, user_id) -> Mapped[int] | None:
+        stmt = await session.execute(
+            select(UserLimitsModel).where(
+                UserLimitsModel.user_id == user_id
+            )
+        )
+        user_limit = stmt.scalars().first()
+
+        if user_limit:
+            return user_limit.daily_limit
+        return None
+
+
+    @with_session
+    async def get_extra_limit(self, session: AsyncSession, user_id) -> Mapped[int] | int:
+        stmt = await session.execute(
+            select(ExtraLimitsModel).where(
+                ExtraLimitsModel.user_id == user_id
+            )
+        )
+        extra_limit = stmt.scalars().first()
+
+        if extra_limit:
+            return extra_limit.daily_limit
+        return 0
+
+
+    @with_session
+    async def change_extra_limit(self, session: AsyncSession,
+                                 user_id: int,
+                                 action:str=False,
+                                 limit=None) -> Mapped[int] | int:
+
+        # получаем объект лимита пользователя
+        stmt = await session.execute(
+            select(ExtraLimitsModel).where(
+                ExtraLimitsModel.user_id == user_id
+            )
+        )
+        extra_limit = stmt.scalar_one_or_none()
+
+        if extra_limit:
+            try:
+                match action:
+                    case "minus":
+                        if extra_limit.daily_limit <= 0:
+                            pass
+                        else:
+                            extra_limit.daily_limit -= limit if limit else 1
+                    case "plus":
+                        extra_limit.daily_limit += limit if limit else 1
+
+                await session.commit()
+                return True
+            except Exception as e:
+                logging.error(f"Ошибка добавления лимита {limit}",
+                              e.__dict__)
+                return False
+        else:
+            extra_limit = ExtraLimitsModel(
+                user_id=user_id,
+                daily_limit=limit if limit >= 0 else 0
+            )
+            try:
+                session.add(extra_limit)
+                await session.commit()
+            except Exception as e:
+                logging.error("Не удалось добавить запись о дополнительных лимитах пользователя",
+                              e.__dict__
+                              )
+
+    @staticmethod
+    def choice_limit_type(daily_limit,extra_limit):
+        limit_type = ""
+
+        if daily_limit.daily_limit > 0:
+            limit_type = 'daily'
+        else:
+            if extra_limit.daily_limit > 0:
+                limit_type = 'extra'
+
+        return limit_type
+
+
+    @with_session
+    async def change_user_limit(self,session: AsyncSession,
+                                user_id,
+                                post_id: int,
+                                action: str,
+                                quantity:int = False,
+                                ) -> None:
+        """
+        Метод для динамического управления лимитом пользователя.
+        """
+
+
+        log_data = {
+            "type": "",
+            "post_id": post_id,
+            "user_id": user_id,
+            "status": ""
+        }
+
+        stmt_1 = await session.execute(
+            select(UserLimitsModel).where(
+                UserLimitsModel.user_id == user_id
+            )
+        )
+
+        stmt_2 = await session.execute(
+            select(ExtraLimitsModel).where(
+                ExtraLimitsModel.user_id == user_id
+            )
+        )
+
+        daily_limit = stmt_1.scalar_one_or_none()
+        extra_limit = stmt_2.scalar_one_or_none()
+
+        # определение типа лимита
+        limit_type = self.choice_limit_type(daily_limit, extra_limit)
+
+        match action:
+            # удаление лимитов
+            case "minus":
+
+                status = "deleted"
+
+                if limit_type == "daily":
+                    # отнимаем нужное количество
+                    daily_limit.daily_limit -= 1
+                    await session.commit()
+
+                elif limit_type == "extra":
+                    # отнимаем нужное количество
+                    extra_limit.daily_limit -= 1
+                    await session.commit()
+
+                # определяем данные для логирования
+                log_data["type"] = limit_type
+                log_data["status"] =  status
+
+                log_obj = LimitObject.model_validate(log_data)
+
+                await self.add_limit_log(log_obj)
+
+            # возвращение лимитов
+            case "plus":
+                status = "added"
+                log_obj = await self.get_limit_log(
+                    post_id=post_id,
+                    user_id=user_id
+                )
+                if log_obj.type == 'daily':
+                    daily_limit.daily_limit += quantity if quantity else 1
+
+                elif log_obj.type == 'extra':
+                    extra_limit.daily_limit += quantity if quantity else 1
+
+                    # определяем данные для логирования
+                    log_data["type"] = limit_type
+                    log_data["status"] = status
+
+                    log_obj = LimitObject.model_validate(log_data)
+
+                    await self.add_limit_log(log_obj)
+
+                await session.commit()
+
+            case False:
+                pass
+
+
+
+
+    @with_session
+    async def add_limit_log(self,
+                            session:AsyncSession,
+                            limit_obj: LimitObject) -> LimitObject | None:
+
+        limit_log = LimitLogsModel(
+            user_id=limit_obj.user_id,
+            post_id=limit_obj.post_id,
+            type=limit_obj.type,
+            status=limit_obj.status
+        )
+        try:
+            session.add(limit_log)
+            await session.commit()
+
+            limit_log = LimitObject.model_validate(limit_log.__dict__)
+            return limit_log
+
+        except Exception as e:
+            logging.error("Ошибка добавления лога для лимита",
+                          e.__dict__
+                          )
+
+    @with_session
+    async def get_limit_log(self,session:AsyncSession,
+                            post_id:int,
+                            user_id:int) -> LimitObject | None:
+        stmt = await session.execute(
+            select(LimitLogsModel).where(
+                and_(
+                    LimitLogsModel.post_id == post_id,
+                    LimitLogsModel.user_id == user_id
+                )
+            )
+        )
+
+        user_log = stmt.scalar_one_or_none()
+        user_log = LimitObject.model_validate(user_log.__dict__)
+
+        return user_log
+
 
 
 class PostManagementBase:
@@ -158,6 +438,7 @@ class PostManagementBase:
             session.add(post)
             await session.commit()
             return post.id
+
         except Exception as e:
             logging.error(e)
             await session.rollback()
@@ -243,7 +524,7 @@ class PostManagementBase:
 
 
     @with_session
-    async def changeStatus(self,session: AsyncSession,post_id,status):
+    async def change_post_status(self, session: AsyncSession, post_id, status):
         stmt = await session.execute(select(PostModel).where(PostModel.id == post_id))
         result = stmt.scalars().first()
         if result:
@@ -266,6 +547,7 @@ class PostManagementBase:
         result = post.scalars().first()
 
         result.status = 'deactivate'
+        result.job_id = None
 
         await session.commit()
 
@@ -287,8 +569,10 @@ class PostManagementBase:
             ).where(
                 and_(
                     PostModel.user_id == user_id,
-                     PostModel.created_at >= day_start,
-                     PostModel.created_at <= day_finish)
+                    PostModel.created_at >= day_start,
+                    PostModel.created_at <= day_finish,
+                    PostModel.message_id != None
+                )
             )
         )
 

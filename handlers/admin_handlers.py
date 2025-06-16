@@ -4,7 +4,6 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram import F
 from sqlalchemy.testing.plugin.plugin_base import logging
-
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
 from middlewares.subscription_verification import SubscriptionVerificationMiddleware
@@ -92,11 +91,16 @@ async def cancel_post(message:Message, state: FSMContext):
                                 f"{reason_cancellation}",
                            reply_markup=btn_home())
 
+    # добавляем лимит обратно
+    await action_orm.get_user_limit(user_id=post_data.user_id,
+                                    param="plus"
+                                    )
+
     user_state = await state_for_user(post_data.user_id)
 
     await user_state.clear()
 
-    await orm_posts.changeStatus(post_data.id,'canceled')
+    await orm_posts.change_post_status(post_data.id, 'canceled')
 
     await state.clear()
 
@@ -108,21 +112,32 @@ async def cancel_posting(callback: CallbackQuery,state: FSMContext):
     callback_text,post_id = callback.data.split('_')
     post = await orm_posts.get_post(int(post_id))
 
-
-    if schedule_cancel(post.job_id):
-        admins_data = await action_orm.get_admins_id()
-        await change_admin_message(admins_data=admins_data,
-                                   post_id=int(post_id),
-                                   verdict='postCancel'
+    try:
+        if schedule_cancel(post.job_id):
+            admins_data = await action_orm.get_admins_id()
+            await change_admin_message(admins_data=admins_data,
+                                       post_id=int(post_id),
+                                       verdict='postCancel'
+                                       )
+            await bot.send_message(text='<b>Ваша публикация отменена администратором!</b>\n'
+                                        'Вы можете снова воспользоваться лимитом.'
+                                        'подробнее - /help',
+                                   chat_id=post.user_id
                                    )
-        await bot.send_message(text='<b>Ваша публикация отменена администратором!</b>\n'
-                                    'подробнее - /help',
-                               chat_id=post.user_id
-                               )
-        await orm_posts.remove_post(int(post_id))
-        await state.clear()
-        await callback.answer("Вакансия успешно отменена!")
-    else:
+            await orm_posts.post_deactivate(int(post_id))
+
+            # добавляем лимит обратно
+            await action_orm.change_user_limit(user_id=post.user_id,
+                                               post_id=post.id,
+                                               action="plus"
+                                            )
+
+            await state.clear()
+            await callback.answer("Вакансия успешно отменена!")
+        else:
+            await callback.answer('Публикация уже опубликована или отменена ранее.')
+
+    except AttributeError:
         await callback.answer('Публикация уже опубликована или отменена ранее.')
 
 
@@ -188,6 +203,7 @@ async def broadcast(message: Message,state: FSMContext):
 @admin_router.message(F.text,AdminState.waiting_for_broadcast_ms)
 async def send_broadcast(message: Message,state: FSMContext):
     blocked_count = 0
+    users_count = 0
     all_users = await action_orm.get_users_ids()
     if all_users is not None:
         for user_id in all_users:
@@ -196,10 +212,12 @@ async def send_broadcast(message: Message,state: FSMContext):
                     await message.bot.send_message(text=message.text,
                                                    chat_id=int(user_id)
                                                    )
+                    users_count += 1
             except aiogram.exceptions.TelegramForbiddenError as e:
                 blocked_count += 1
                 logging.error(f'Произошла ошибка {e} во время отправки сообщения пользователю')
-        await message.answer(f'Я отправил сообщения всем пользователям.\n'
+
+        await message.answer(f'Я отправил сообщения всем пользователям.({users_count})\n'
                              f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>')
         await state.clear()
     else:

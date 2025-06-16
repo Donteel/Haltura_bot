@@ -85,10 +85,16 @@ async def request_sender(admin_data:list[int],post_id: int) -> None:
 
     post = await orm_posts.get_post(post_id)
 
+    logging.info(f"По ID {post_id} был получен объект вакансии:"
+                 f"Id - {post.id}\n"
+                 f"UserID - {post.user_id}\n"
+                 f"UserName{post.username}\n"
+                 f"message_id - {post.message_id}")
+
+    logging.info("Начинаю рассылку по администраторам")
     for admin in admin_data:
 
         # отправка сообщения админам
-
         message_obj = await bot.send_message(
             chat_id=admin,
             text="Новая вакансия от пользователя!\n"
@@ -99,14 +105,21 @@ async def request_sender(admin_data:list[int],post_id: int) -> None:
             reply_markup= btn_moderation(post.id)
         )
 
+
         # сохранить данные отправленных заявок для возможного изменения
 
         admin_message = MessageObject(admin_id=admin,
                                       post_id=post.id,
                                       message_id=message_obj.message_id
                                       )
+        logging.info("Сообщение администратору отправлено:"
+                     f"ID сообщения {message_obj.message_id}\n"
+                     f"PostID {post.id}"
+                     )
+
 
         await orm_messages.add_message_data(admin_message)
+
 
 
 # Функция рассылки сообщения администраторам
@@ -132,7 +145,7 @@ async def post_publication(chat_id:int,post_id) -> None:
     """
     Публикует пост в группу
     :param chat_id: id группы
-    :param post_id: id временной записи о вакансии
+    :param post_id: id записи о вакансии
     :return: None
     """
     post_data = await orm_posts.get_post(post_id)
@@ -162,6 +175,7 @@ async def post_publication(chat_id:int,post_id) -> None:
             chat_id=int(post_data.user_id),
             reply_markup=btn_home()
         )
+
         return message_obj.message_id
 
 
@@ -181,7 +195,8 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
                 "adminDelete":"Удалено",
                 "postCancel":"Отменено",
                 "cancelAndBlock":"Отменён и Блокирован",
-                "delAndBlock": "Удален и Блокирован"}
+                "delAndBlock": "Удален и Блокирован"
+                }
 
     for admin in admins_data:
 

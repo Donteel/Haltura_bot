@@ -34,7 +34,7 @@ def btn_admins(links: list[str:str]):
     """
 
     return create_inline_keyboard(
-        [[InlineKeyboardButton(text=f'⛑ {name}',url=f't.me/{link}')] for link, name in links]
+        [[InlineKeyboardButton(text=f'{name}',url=f't.me/{link}')] for link, name in links]
     )
 
 
@@ -106,3 +106,17 @@ def btn_moderation(temp_id):
     btn_2 = InlineKeyboardButton(text="⛔ Отмена и Блок", callback_data=f'cancelAndBlock_{temp_id}')
 
     return create_inline_keyboard([[btn_1,btn_2]])
+
+def btn_limit_act(recipient_id,value=0):
+
+    btn_1 = InlineKeyboardButton(text="➕",callback_data=f"counter:{value+1}:{recipient_id}")
+    btn_2 = InlineKeyboardButton(text=f"{value}",callback_data=f"none_data")
+    btn_3 = InlineKeyboardButton(text="➖", callback_data=f"counter:{value-1}:{recipient_id}")
+    btn_4 = InlineKeyboardButton(text="🚀 Выполнить", callback_data=f"add_limits:{recipient_id}:{value}")
+
+    return create_inline_keyboard(
+        [
+            [btn_1,btn_2,btn_3],
+            [btn_4]
+        ]
+    )
