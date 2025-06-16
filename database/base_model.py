@@ -117,7 +117,7 @@ class BlackListModel(AbstractModel):
 class AdminModel(AbstractModel):
 
     __tablename__ = 'admin' # noqa
-    id = mapped_column(BigInteger,nullable=False,unique=True,primary_key=True)
+    id = mapped_column(BigInteger,nullable=False)
     user_name:Mapped[str] = mapped_column(nullable=False)
     admin_role: Mapped[str] = mapped_column(nullable=False)
 

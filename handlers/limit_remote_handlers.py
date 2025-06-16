@@ -99,7 +99,7 @@ async def finalization_of_limits(callback: CallbackQuery, state: FSMContext):
 
         await bot.send_message(
             text=f"<b>Администратор {arg_for_msg} вам "
-                 f"лимиты для публикаций в количестве - "
+                 f"лимиты для публикаций в количестве: "
                  f"{value_of_limits if int(value_of_limits) > 0 else abs(int(value_of_limits))} </b>",
             chat_id=int(user_id)
         )

@@ -15,6 +15,7 @@ from utils.config import action_orm, main_chat, orm_posts
 from aiogram.fsm.context import FSMContext
 from utils.other import state_for_user, schedule_cancel, post_publication, change_admin_message
 
+# noinspection DuplicatedCode
 admin_router = Router()
 
 
