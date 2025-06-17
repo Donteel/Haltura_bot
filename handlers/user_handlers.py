@@ -79,9 +79,9 @@ async def help_func(message: Message):
 
 @user_router.message(Command("buy_limits"))
 async def buy_limits_for_user(message: Message):
-    await message.answer("<b>🔄 Стоимость лимита:</b>\n 1 лимит = <b>50₽</b\n>"
+    await message.answer("<b>🔄 Стоимость лимита:</b>\n 1 лимит = <b>50₽</b>\n"
                          "💳 Пополнение доступно только через администратора.\n"
-                         f"<b>Ваш ID для пополнения:</b> {message.chat.id} \n",
+                         f"<b>Ваш ID для пополнения:</b> <code>{message.chat.id}</code> \n",
                          reply_markup=btn_link(
                              "💰 Пополнить лимиты",
                              rules_link="t.me/mr_soo777")
