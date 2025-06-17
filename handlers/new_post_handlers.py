@@ -51,8 +51,7 @@ async def start_creating(message: Message,state: FSMContext):
     else:
         await message.answer(
             "😊 <b>У вас закончились публикации.</b> \n"
-            "Вы можете купить дополнительные <i>лимиты</i> у администратора.\n\n"
-            f"<b> Ваш ID для покупки:</b> <code>{message.from_user.id}</code>",
+            "Вы можете докупить <i>лимиты</i> по команде /buy_limits \n\n",
             reply_markup=btn_home()
         )
         await state.clear()

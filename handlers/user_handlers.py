@@ -77,6 +77,15 @@ async def help_func(message: Message):
                         reply_markup=btn_admins(links=await action_orm.get_admins())
                         )
 
+@user_router.message(Command("buy_limits"))
+async def buy_limits_for_user(message: Message):
+    await message.answer("<b>🔄 Стоимость лимита:</b>\n 1 лимит = <b>50₽</b\n>"
+                         "💳 Пополнение доступно только через администратора.\n"
+                         f"<b>Ваш ID для пополнения:</b> {message.chat.id} \n",
+                         reply_markup=btn_link(
+                             "💰 Пополнить лимиты",
+                             rules_link="t.me/mr_soo777")
+                         )
 
 @user_router.message(F.text == '📤 Отправить готовую')
 async def create_post(message: Message,state:FSMContext):
@@ -99,8 +108,7 @@ async def create_post(message: Message,state:FSMContext):
 
         await message.answer(
             "😊 <b>У вас закончились публикации.</b> \n"
-            "Вы можете купить дополнительные <i>лимиты</i> по команде /help\n\n"
-            f"<b> Ваш ID для покупки:</b> <code>{message.from_user.id}</code>",
+            "Вы можете докупить <i>лимиты</i> по команде /buy_limits \n\n",
             reply_markup=btn_home()
         )
         await state.clear()

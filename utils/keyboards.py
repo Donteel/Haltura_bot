@@ -86,7 +86,11 @@ def btn_link(button_text: str, rules_link: str):
 
     btn_1 = InlineKeyboardButton(text=f'{button_text}', url=rules_link)
 
-    return create_inline_keyboard((btn_1,))
+    return create_inline_keyboard(
+        [
+            [btn_1]
+        ]
+    )
 
 def btn_subscribe():
     btn_1= InlineKeyboardButton(text='Подписаться 👀',url='https://t.me/+gtQppDLgOT0xYWMy')
