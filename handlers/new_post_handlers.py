@@ -43,7 +43,7 @@ async def start_creating(message: Message,state: FSMContext):
     if daily_limit + extra_limit > 0:
         await message.answer(
             f'📄 [<i>Доступно публикаций: {daily_limit+extra_limit}</i>]\n\n'
-            f'<b>Начнем создание вакансии.!</b>\n\n'
+            f'🏢 <b>Начнем создание вакансии.!</b>\n'
             'Где предстоит работать? (название компании или локация к месту работы)',
             reply_markup=btn_cancel_create()
         )
@@ -60,7 +60,7 @@ async def start_creating(message: Message,state: FSMContext):
 async def waiting_name_company(message: Message,state:FSMContext):
 
     await state.update_data(company_name=message.text)
-    await message.answer('Укажите город и район.')
+    await message.answer('📍 Укажите город и район.')
     await state.set_state(NewPost.place)
 
 
@@ -68,7 +68,7 @@ async def waiting_name_company(message: Message,state:FSMContext):
 @create_post_router.message(NewPost.place)
 async def awaiting_place(message: Message,state: FSMContext):
     await state.update_data(place=message.text)
-    await message.answer('Когда нужно приступить: немедленно, в течение недели или в удобное время?')
+    await message.answer('⏳ Когда нужно приступить: немедленно, в течение недели или в удобное время?')
     await state.set_state(NewPost.data_time)
 
 
@@ -76,7 +76,7 @@ async def awaiting_place(message: Message,state: FSMContext):
 @create_post_router.message(NewPost.data_time)
 async def awaiting_datatime(message: Message,state: FSMContext):
     await state.update_data(datatime=message.text)
-    await message.answer('Укажите должность или формат работы.')
+    await message.answer('💼 Укажите должность или формат работы.')
     await state.set_state(NewPost.job_title)
 
 
@@ -84,7 +84,7 @@ async def awaiting_datatime(message: Message,state: FSMContext):
 @create_post_router.message(NewPost.job_title)
 async def awaiting_job_title(message: Message,state: FSMContext):
     await state.update_data(job_title=message.text)
-    await message.answer('Какой режим работы?\n'
+    await message.answer('🕒 Какой режим работы?\n'
                          'Укажите часы работы и график смен,или объем работы в количестве часов.')
     await state.set_state(NewPost.work_schedule)
 
@@ -92,14 +92,14 @@ async def awaiting_job_title(message: Message,state: FSMContext):
 @create_post_router.message(NewPost.work_schedule)
 async def awaiting_work_schedule(message: Message,state: FSMContext):
     await state.update_data(work_schedule=message.text)
-    await message.answer('Что именно нужно делать?')
+    await message.answer('📋 Что именно нужно делать?')
     await state.set_state(NewPost.task)
 
 # Задачи работника
 @create_post_router.message(NewPost.task)
 async def awaiting_task(message: Message,state: FSMContext):
     await state.update_data(task=message.text)
-    await message.answer('Какая сумма и форма оплаты? (почасовая, за смену, за весь заказ)')
+    await message.answer('💸 Какая сумма и форма оплаты? (почасовая, за смену, за весь заказ)')
     await state.set_state(NewPost.payment)
 
 # Оплата
@@ -107,7 +107,7 @@ async def awaiting_task(message: Message,state: FSMContext):
 async def awaiting_payment(message: Message,state: FSMContext):
     await state.update_data(payment=message.text)
     await message.answer('Последний шаг!\n\n'
-                         'Телефон, Telegram, WhatsApp или другой удобный способ.')
+                         '📱 Телефон, Telegram, WhatsApp или другой удобный способ.')
     await state.set_state(NewPost.contacts)
 
 # Связь
@@ -119,7 +119,7 @@ async def awaiting_contacts(message: Message,state: FSMContext):
     new_post =  f"📍 <b>Локация:</b>\n"\
                 f"{data['place']}\n"\
                 "\n"\
-                f"📍 <b>Компания / Работодатель:</b>\n"\
+                f"🏢 <b>Компания / Работодатель:</b>\n"\
                 f"{data['company_name']}\n"\
                 "\n"\
                 f"⏳ <b>Срочность:</b>\n"\
