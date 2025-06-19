@@ -3,7 +3,7 @@ import zoneinfo
 from datetime import datetime
 from functools import wraps
 from typing import Sequence, Optional
-from sqlalchemy import and_, Row,func
+from sqlalchemy import and_, Row, func
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy import select
 from sqlalchemy.orm import Mapped
@@ -18,16 +18,16 @@ from database.user_object import UserObject
 AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
 
-def with_session(func):
+def with_session(function):
     """Декоратор для автоматического создания и закрытия сессии"""
-    @wraps(func)
+    @wraps(function)
     async def wrapper(self, *args, **kwargs):  # `self` здесь будет передан автоматически
         async with self.session_factory() as session:
             try:
-                return await func(self, session, *args, **kwargs)  # Передаём `session`
+                return await function(self, session, *args, **kwargs)  # Передаём `session`
             except Exception as e:
                 await session.rollback()
-                logging.error(f"Ошибка в {func.__name__}: {e}")
+                logging.error(f"Ошибка в {function.__name__}: {e}")
                 raise
     return wrapper
 
@@ -74,7 +74,8 @@ class UserManagementBase:
 
     @staticmethod
     async def get_day_range():
-        now = datetime.now(zoneinfo.ZoneInfo('Europe/Moscow'))
+
+        now = datetime.now()
 
         day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         day_finish = now.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -162,6 +163,7 @@ class UserManagementBase:
             # создаем новую запись и даем новые лимиты
 
             new_limit = UserLimitsModel(user_id=user_id)
+
             try:
                 session.add(new_limit)
                 await session.commit()
@@ -186,7 +188,7 @@ class UserManagementBase:
                 await session.commit()
             except IntegrityError as e:
                 await session.rollback()
-                logging.error("Произошла ошибка обновления устаревшего лимита")
+                logging.error("Произошла ошибка обновления устаревшего лимита",e.__dict__)
                 raise IntegrityError
         else:
             pass

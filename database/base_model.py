@@ -17,9 +17,8 @@ class Base(AsyncAttrs, DeclarativeBase):
 class AbstractModel(Base):
     __abstract__ = True
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime.datetime] = mapped_column(default=datetime.datetime.now(
-        tz=zoneinfo.ZoneInfo('Europe/Moscow')
-    )
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        default=datetime.datetime.now()
     )
 
 
@@ -46,6 +45,7 @@ class UserModel(AbstractModel):
 
 class UserLimitsModel(AbstractModel):
     __tablename__ = 'user_limits'
+
     user_id = mapped_column(BigInteger,
                             ForeignKey(UserModel.id,
                                        ondelete='CASCADE'),

@@ -87,6 +87,7 @@ async def buy_limits_for_user(message: Message):
                              rules_link="t.me/mr_soo777")
                          )
 
+
 @user_router.message(F.text == '📤 Отправить готовую')
 async def create_post(message: Message,state:FSMContext):
 
@@ -97,11 +98,14 @@ async def create_post(message: Message,state:FSMContext):
         await message.answer("📤 Отправь готовую вакансию!\n"
                              "👀 Оформив её по правилам, одобрение придёт быстрее.\n\n"
                              f"📄 [<i>Доступно публикаций: {daily_limit+extra_limit}</i>]",
-                             reply_markup=btn_cancel())
+                             reply_markup=btn_cancel()
+                             )
+
 
         await state.update_data(username=message.from_user.username)
 
         await state.set_state(NewPost.awaiting_finished_post)
+
         logging.info(f'Пользователь {message.from_user.id} активировал кнопку публикации готового поста')
 
     else:

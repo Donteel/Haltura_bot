@@ -17,8 +17,9 @@ class CheckLimitMiddleware(BaseMiddleware):
                        ):
 
         if isinstance(event, Message):
+
             user_limit = await action_orm.get_user_limit(user_id=event.chat.id)
-            if user_limit is None:
-                await action_orm.create_user_limit(event.chat.id,limit=2)
+
+            await action_orm.create_user_limit(event.chat.id,limit=2)
 
         return await handler(event, data)

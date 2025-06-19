@@ -48,6 +48,12 @@ async def confirm_post(callback: CallbackQuery, state: FSMContext):
                                verdict=callback_data
                                )
 
+    # отнимаем 1 публикацию пользователя
+    await action_orm.change_user_limit(user_id=post_data.user_id,
+                                       post_id=post_id,
+                                       action="minus"
+                                       )
+
 
     user_state = await state_for_user(post_data.user_id)
 
@@ -93,9 +99,11 @@ async def cancel_post(message:Message, state: FSMContext):
                            reply_markup=btn_home())
 
     # добавляем лимит обратно
-    await action_orm.get_user_limit(user_id=post_data.user_id,
-                                    param="plus"
-                                    )
+    await action_orm.change_user_limit(
+        user_id=post_data.user_id,
+        post_id=post_data.id,
+        action="plus"
+    )
 
     user_state = await state_for_user(post_data.user_id)
 
