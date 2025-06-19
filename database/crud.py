@@ -405,9 +405,9 @@ class UserManagementBase:
         )
 
         user_log = stmt.scalar_one_or_none()
-        user_log = LimitObject.model_validate(user_log.__dict__)
-
-        return user_log
+        if user_log:
+            user_log = LimitObject.model_validate(user_log.__dict__)
+            return user_log
 
 
 
