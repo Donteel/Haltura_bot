@@ -204,7 +204,7 @@ class UserManagementBase:
 
         if user_limit:
             return user_limit.daily_limit
-        return None
+        return 0
 
 
     @with_session

@@ -37,8 +37,13 @@ async def cancel_create(message: Message,state: FSMContext):
 @create_post_router.message(F.text == "📝 Создать вручную")
 async def start_creating(message: Message,state: FSMContext):
     user_id = message.chat.id
-    daily_limit = await action_orm.get_user_limit(user_id)
-    extra_limit = await action_orm.get_extra_limit(user_id)
+    daily_limit: int = await action_orm.get_user_limit(user_id)
+    extra_limit: int = await action_orm.get_extra_limit(user_id)
+
+    logging.info("лимиты пользователя:\n"
+                 f"Ежедневных - {daily_limit}\n"
+                 f"Экстра - {extra_limit}"
+                 )
 
     if daily_limit + extra_limit > 0:
         await message.answer(
