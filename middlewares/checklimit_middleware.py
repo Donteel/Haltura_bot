@@ -20,6 +20,6 @@ class CheckLimitMiddleware(BaseMiddleware):
 
             user_limit = await action_orm.get_user_limit(user_id=event.chat.id)
 
-            await action_orm.create_user_limit(event.chat.id,limit=2)
+            await action_orm.create_user_limit(event.chat.id,limit=1)
 
         return await handler(event, data)

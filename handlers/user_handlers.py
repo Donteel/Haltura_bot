@@ -52,6 +52,7 @@ async def start(message: Message):
 
     print(post_count)
 
+
 @user_router.message(F.text == '❌ Отменить')
 async def cancel_func(message: Message,state: FSMContext):
     await state.clear()
@@ -79,7 +80,7 @@ async def help_func(message: Message):
 
 @user_router.message(Command("buy_limits"))
 async def buy_limits_for_user(message: Message):
-    await message.answer("<b>🔄 Стоимость лимита:</b>\n 1 лимит = <b>50₽</b>\n"
+    await message.answer("<b>🔄 Стоимость лимита:</b>\n 1 лимит = <b>25₽</b>\n"
                          "💳 Пополнение доступно только через администратора.\n"
                          f"<b>Ваш ID для пополнения:</b> <code>{message.chat.id}</code> \n",
                          reply_markup=btn_link(
