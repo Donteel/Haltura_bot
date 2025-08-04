@@ -186,8 +186,9 @@ async def awaiting_post(message: Message,state:FSMContext):
     admin_data = await action_orm.get_admins_id()
     user_data = await state.get_data()
     post_text = user_data.get('post_text',message.text)
+    moderation_result = await post_moderation(post_text)
 
-    if await post_moderation(post_text):
+    if moderation_result == "pass":
 
         # создать  запись в бд
         post_id = await orm_posts.create_new_post(user_id=message.chat.id,
@@ -227,39 +228,44 @@ async def awaiting_post(message: Message,state:FSMContext):
         # удалить временные данные
         await state.clear()
 
-    else:
+    elif moderation_result != "pass":
+
         # добавить вакансию во временную базу данных
         post_id = await orm_posts.create_new_post(user_id=message.chat.id,
                                                    username=username,
                                                    post_text=post_text,
                                                    )
 
-        # отправить вакансию на одобрение администраторам
-        for admin in admin_data:
-            ms_obj = await bot.send_message(text=
-                                   "Вакансия требует ручной проверки!\n\n"
-                                   f"Отправитель - @{username}\n"
-                                   f"Текст вакансии:\n"
-                                   f"{post_text}",
-                                   chat_id=admin,
-                                   reply_markup=btn_approval(post_id)
-                                   )
-
-            # сохранить messages администраторов
-            admin_message = MessageObject(admin_id=admin,
-                                          post_id=post_id,
-                                          message_id=ms_obj.message_id
-                                          )
-
-            await orm_messages.add_message_data(admin_message)
+        # # отправить вакансию на одобрение администраторам
+        # for admin in admin_data:
+        #     ms_obj = await bot.send_message(text=
+        #                            "[Вакансия требует ручной проверки!]\n\n"
+        #                            f"<b>Отправитель - </b>@{username}\n"
+        #                            f"<b>Текст вакансии:</b>\n"
+        #                            f"{post_text}\n"
+        #                            f"<b>Причина:</b>\n"
+        #                            f"{moderation_result}\n",
+        #                            chat_id=admin,
+        #                            reply_markup=btn_approval(post_id)
+        #                            )
+        #
+        #     # сохранить messages администраторов
+        #     admin_message = MessageObject(admin_id=admin,
+        #                                   post_id=post_id,
+        #                                   message_id=ms_obj.message_id
+        #                                   )
+        #
+        #     await orm_messages.add_message_data(admin_message)
 
         # уведомить пользователя
         await message.answer("Система не смогла автоматически одобрить вакансию.\n"
-                             " Я передал ее на проверку администратору.",
-                             reply_markup=btn_standby())
+                             "<b>Причина:</b>\n"
+                             f"{moderation_result}\n\n"
+                             "Исправьте нарушения и повторите попытку.",
+                             reply_markup=btn_home()
+                             )
 
         await state.clear()
-        await state.set_state(NewPost.pending_confirmation)
 
 
 @user_router.message(Command("rules"))
