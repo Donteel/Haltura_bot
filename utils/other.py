@@ -159,7 +159,7 @@ async def post_publication(chat_id:int,post_id) -> None:
     except Exception as e:
         logging.info(f"Ошибка публикации в  группу\n"
                      f"{e}")
-        return
+        return None
     else:
 
         # создаем запись в базу данных
@@ -186,7 +186,7 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
     Функция изменяет сообщение у администраторов
      на конкретный пост в зависимости от вердикта администратора.
 
-    :param admins_data: список id администраторов
+    :param admins_data: Список id администраторов
     :param post_id: id записи в бд
     :param verdict: вердикт администратора
     :return: bool

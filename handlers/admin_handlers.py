@@ -157,30 +157,36 @@ async def cancel_posting_and_block(callback: CallbackQuery,state: FSMContext):
     post = await orm_posts.get_post(int(post_id))
 
     try:
+
+        admins_data = await action_orm.get_admins_id()
+
+
+        await action_orm.add_to_blacklist(post.user_id)
+
+        await bot.send_message(text='<b>Вы добавлены в черный список!</b>\n'
+                                    'Спасибо что были с нами!',
+                               chat_id=post.user_id,
+                               reply_markup=ReplyKeyboardRemove()
+                               )
+
+        await orm_posts.remove_post(int(post_id))
+
+        logging.info("попытка удаления задачи на публикацию.")
         if schedule_cancel(post.job_id):
-
-            admins_data = await action_orm.get_admins_id()
-
-            await change_admin_message(admins_data=admins_data,
-                                       post_id=int(post_id),
-                                       verdict=callback_text
-                                       )
-
-            await action_orm.add_to_blacklist(post.user_id)
-
-            await bot.send_message(text='<b>Вы добавлены в черный список!</b>\n'
-                                        'Спасибо что были с нами!',
-                                   chat_id=post.user_id,
-                                   reply_markup=ReplyKeyboardRemove()
-                                   )
-
-            await orm_posts.remove_post(int(post_id))
-            await state.clear()
-
+            logging.info("Публикация пользователя отменена")
         else:
-            await callback.answer('Публикация уже опубликована или отменена ранее.')
-    except AttributeError:
-        await callback.answer('Задача не найдена',show_alert=True)
+            logging.info("Публикация уже опубликована или отменена ранее")
+            await callback.message.answer('Публикация уже опубликована или отменена ранее, '
+                                          'пользователь заблокирован!')
+
+        await change_admin_message(admins_data=admins_data,
+                                   post_id=int(post_id),
+                                   verdict=callback_text
+                                   )
+        await state.clear()
+
+    except Exception as e:
+        await callback.answer(f" ошибка действия - {e}")
     await callback.answer()
 
 
