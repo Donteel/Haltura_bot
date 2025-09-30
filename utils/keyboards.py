@@ -111,6 +111,7 @@ def btn_moderation(temp_id):
 
     return create_inline_keyboard([[btn_1,btn_2]])
 
+
 def btn_limit_act(recipient_id,value=0):
 
     btn_1 = InlineKeyboardButton(text="➕",callback_data=f"counter:{value+1}:{recipient_id}")
@@ -124,3 +125,42 @@ def btn_limit_act(recipient_id,value=0):
             [btn_4]
         ]
     )
+
+def btn_pay_methods(methods_list: list[tuple]):
+    btn_list = []
+    for method in methods_list:
+        btn_list.append(
+            [InlineKeyboardButton(text=method[1], callback_data=method[1].lower())]
+        )
+
+    return create_inline_keyboard(btn_list)
+
+
+def btn_buy_posts(slug: str):
+
+    btn_1 = InlineKeyboardButton(text="",callback_data=f"buy_publication:{slug}")
+    return create_inline_keyboard(
+        [
+            [btn_1]
+        ]
+    )
+
+def btn_services(service_list: list[tuple]):
+    """
+    :param service_list: list[tuple] tuple содержит данные в таком порядке slug, name, price
+    :return: inline keyboard
+    """
+
+    btn_list = []
+    plug = InlineKeyboardButton(text='Не найдено', callback_data='plug')
+
+    for service in service_list:
+        btn_list.append(
+            [
+                InlineKeyboardButton(
+                    text=f"⭐️ {service[1]}",
+                    callback_data=f"service:{service[0]}")])
+    if not btn_list:
+        btn_list.append([plug])
+
+    return create_inline_keyboard(btn_list)

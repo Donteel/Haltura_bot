@@ -1,5 +1,6 @@
 import datetime
 import zoneinfo
+from typing import Optional
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncAttrs, async_sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
@@ -58,6 +59,7 @@ class UserLimitsModel(AbstractModel):
         back_populates="limit"
     )
 
+
 class ExtraLimitsModel(AbstractModel):
     __tablename__ = 'extra_limits'
     user_id = mapped_column(BigInteger,ForeignKey(UserModel.id,ondelete='CASCADE'),unique=True,nullable=False)
@@ -76,7 +78,7 @@ class PostModel(AbstractModel):
     post_text: Mapped[str] = mapped_column(nullable=False)
     message_id:Mapped[int] = mapped_column(nullable=True)
     status: Mapped[str] = mapped_column(nullable=False,default='pending')
-    job_id: Mapped[str] = mapped_column(nullable=True)
+    job_id: Mapped[Optional[str]] = mapped_column(nullable=True)
 
 
 class LimitLogsModel(AbstractModel):
@@ -132,6 +134,25 @@ class MessageModel(AbstractModel):
     message_id: Mapped[int] = mapped_column(nullable=False)
 
     admins = relationship("AdminModel",back_populates="message_ids")
+
+class PaymentMethodsModel(AbstractModel):
+    __tablename__ = "payment_methods"
+    payment_name: Mapped[str] = mapped_column(nullable=False)
+
+class OrdersModel(AbstractModel):
+    __tablename__ = 'orders'
+    user_id = mapped_column(BigInteger,ForeignKey(UserModel.id, ondelete='CASCADE'), nullable=False)
+    order_id: Mapped[int] = mapped_column(nullable=False)
+    payment_method:Mapped[int] = mapped_column(ForeignKey(PaymentMethodsModel.id,ondelete='CASCADE'), nullable=False)
+    status: Mapped[str] = mapped_column(nullable=False,default='pending')
+    order_amount: Mapped[float] = mapped_column(nullable=False)
+
+
+class ServiceModel(AbstractModel):
+    __tablename__ = 'services'
+    service_name : Mapped[str] = mapped_column(nullable=False)
+    service_price: Mapped[float] = mapped_column(nullable=False)
+    quan: Mapped[int] = mapped_column(nullable=False)
 
 
 async def create_tables():

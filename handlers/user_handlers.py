@@ -1,26 +1,27 @@
 import asyncio
 import logging
+
 from datetime import datetime, timedelta
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
+from aiogram.types import Message, CallbackQuery
 from aiogram import F
-from database.message_object import MessageObject
-from database.post_object import PostObject
+from aiogram import Router
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
 from middlewares.checklimit_middleware import CheckLimitMiddleware
 from middlewares.pending_confirmation_middlewares import CheckPendingConfirmMiddleware
 from middlewares.spam_protections import SpamProtected
 from middlewares.subscription_verification import SubscriptionVerificationMiddleware
+
 from utils.keyboards import *
-from aiogram import Router
-from aiogram.filters import Command
 from utils.bot_instance import bot
-from utils.config import scheduler, orm_posts, orm_messages
+from utils.config import scheduler, orm_posts, orm_payments
 from utils.schedule_tasks import time_zone
 from utils.state_models import NewPost, DeactivatePostState
 from utils.config import action_orm, main_chat
-from aiogram.fsm.context import FSMContext
 from utils.other import request_sender, post_moderation, post_publication, check_member_status
 
 user_router = Router()
@@ -78,16 +79,6 @@ async def help_func(message: Message):
                         reply_markup=btn_admins(links=await action_orm.get_admins())
                         )
 
-@user_router.message(Command("buy_limits"))
-async def buy_limits_for_user(message: Message):
-    await message.answer("<b>🔄 Стоимость лимита:</b>\n 1 лимит = <b>25₽</b>\n"
-                         "💳 Пополнение доступно только через администратора.\n"
-                         f"<b>Ваш ID для пополнения:</b> <code>{message.chat.id}</code> \n",
-                         reply_markup=btn_link(
-                             "💰 Пополнить лимиты",
-                             rules_link="t.me/mr_soo777")
-                         )
-
 
 @user_router.message(F.text == '📤 Отправить готовую')
 async def create_post(message: Message,state:FSMContext):
@@ -112,10 +103,9 @@ async def create_post(message: Message,state:FSMContext):
     else:
 
         await message.answer(
-            "😊 <b>У вас закончились публикации.</b> \n"
-            "Вы можете докупить <i>лимиты</i> по команде /buy_limits \n\n",
-            reply_markup=btn_home()
-        )
+            "😊 <b>У вас закончились публикации!</b> \n"
+            "Вы можете перейти в магазин по команде /shop чтобы купить публикации.")
+
         await state.clear()
 
 

@@ -1,39 +1,39 @@
-import aiogram
-from aiogram.exceptions import TelegramMigrateToChat
-from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
-from aiogram import F
-from sqlalchemy.testing.plugin.plugin_base import logging
+import logging
+
+from aiogram import Router, F
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
+from aiogram.fsm.context import FSMContext
+
 from middlewares.add_user_middleware import AddUserMiddleware
 from middlewares.blacklist_middlewares import CheckBlackListMiddleWare
 from middlewares.subscription_verification import SubscriptionVerificationMiddleware
-from utils.keyboards import *
-from aiogram import Router
-from utils.state_models import AdminState
+
 from utils.bot_instance import bot
-from utils.config import action_orm, main_chat, orm_posts
-from aiogram.fsm.context import FSMContext
-from utils.other import state_for_user, schedule_cancel, post_publication, change_admin_message
+from utils.config import orm_posts, main_chat, action_orm
+from utils.keyboards import btn_home
+from utils.other import post_publication, change_admin_message, state_for_user, schedule_cancel
+from utils.state_models import AdminState
 
 # noinspection DuplicatedCode
-admin_router = Router()
+vacancy_router = Router()
 
 
-admin_router.message.middleware(CheckBlackListMiddleWare())
-admin_router.callback_query.middleware(CheckBlackListMiddleWare())
-admin_router.message.middleware(AddUserMiddleware())
-admin_router.callback_query.middleware(AddUserMiddleware())
-admin_router.message.middleware(SubscriptionVerificationMiddleware())
-admin_router.callback_query.middleware(SubscriptionVerificationMiddleware())
+vacancy_router.message.middleware(CheckBlackListMiddleWare())
+vacancy_router.callback_query.middleware(CheckBlackListMiddleWare())
+vacancy_router.message.middleware(AddUserMiddleware())
+vacancy_router.callback_query.middleware(AddUserMiddleware())
+vacancy_router.message.middleware(SubscriptionVerificationMiddleware())
+vacancy_router.callback_query.middleware(SubscriptionVerificationMiddleware())
 
 
-@admin_router.callback_query(AdminState.action_blocked)
+
+@vacancy_router.callback_query(AdminState.action_blocked)
 async def action_block(callback: CallbackQuery):
     await callback.answer('Этой вакансией занимается другой администратор,подождите обновлений.')
 
 
 # Обработка принятия заявки
-@admin_router.callback_query(F.data.startswith('adminConfirm_'))
+@vacancy_router.callback_query(F.data.startswith('adminConfirm_'))
 async def confirm_post(callback: CallbackQuery, state: FSMContext):
 
     callback_data,post_id = callback.data.split('_')
@@ -62,7 +62,7 @@ async def confirm_post(callback: CallbackQuery, state: FSMContext):
 
 
 # удаление предложенной вакансии
-@admin_router.callback_query(F.data.startswith('adminDelete_'))    # noqa
+@vacancy_router.callback_query(F.data.startswith('adminDelete_'))    # noqa
 async def delete_post(callback: CallbackQuery,state: FSMContext):
 
     callback_text,post_id = callback.data.split('_')
@@ -85,7 +85,7 @@ async def delete_post(callback: CallbackQuery,state: FSMContext):
 
 
 # отправка причины удаления пользователю
-@admin_router.message(AdminState.waiting_for_reason,F.text)
+@vacancy_router.message(AdminState.waiting_for_reason,F.text)
 async def cancel_post(message:Message, state: FSMContext):
 
     data = await state.get_data()
@@ -116,7 +116,7 @@ async def cancel_post(message:Message, state: FSMContext):
     await message.answer('Причина отправлена пользователю!')
 
 
-@admin_router.callback_query(F.data.startswith('postingCancel'))
+@vacancy_router.callback_query(F.data.startswith('postingCancel'))
 async def cancel_posting(callback: CallbackQuery,state: FSMContext):
     callback_text,post_id = callback.data.split('_')
     post = await orm_posts.get_post(int(post_id))
@@ -150,7 +150,7 @@ async def cancel_posting(callback: CallbackQuery,state: FSMContext):
         await callback.answer('Публикация уже опубликована или отменена ранее.')
 
 
-@admin_router.callback_query(F.data.startswith('cancelAndBlock'))
+@vacancy_router.callback_query(F.data.startswith('cancelAndBlock'))
 async def cancel_posting_and_block(callback: CallbackQuery,state: FSMContext):
 
     callback_text, post_id = callback.data.split('_')
@@ -190,7 +190,7 @@ async def cancel_posting_and_block(callback: CallbackQuery,state: FSMContext):
     await callback.answer()
 
 
-@admin_router.callback_query(F.data.startswith('delAndBlock'))
+@vacancy_router.callback_query(F.data.startswith('delAndBlock'))
 async def delete_and_block(callback: CallbackQuery,state: FSMContext):
     callback_text,post_id = callback.data.split('_')
     post = await orm_posts.get_post(int(post_id))
@@ -199,43 +199,3 @@ async def delete_and_block(callback: CallbackQuery,state: FSMContext):
     await delete_post(callback,state)
 
     await callback.answer('Пользователь добавлен в черный список!',show_alert=True)
-
-
-# рассылка пользователям
-@admin_router.message(Command('broadcast'))
-async def broadcast(message: Message,state: FSMContext):
-    if message.from_user.id in await action_orm.get_admins_id():
-        await message.answer('Давай отправим сообщение всем пользователям.\n'
-                             'Жду твоего сообщения для рассылки...',
-                             reply_markup=btn_cancel()
-                             )
-        await state.set_state(AdminState.waiting_for_broadcast_ms)
-    else:
-        await message.answer('Вам не доступна эта команда.',reply_markup=btn_home())
-
-
-# исполнение рассылки
-@admin_router.message(F.text,AdminState.waiting_for_broadcast_ms)
-async def send_broadcast(message: Message,state: FSMContext):
-    blocked_count = 0
-    users_count = 0
-    all_users = await action_orm.get_users_ids()
-    if all_users is not None:
-        for user_id in all_users:
-            try:
-                if int(user_id) != message.from_user.id:
-                    await message.bot.send_message(text=message.text,
-                                                   chat_id=int(user_id)
-                                                   )
-                    users_count += 1
-            except aiogram.exceptions.TelegramForbiddenError as e:
-                blocked_count += 1
-                logging.error(f'Произошла ошибка {e} во время отправки сообщения пользователю')
-
-        await message.answer(f'Я отправил сообщения всем пользователям.({users_count})\n'
-                             f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>')
-        await state.clear()
-    else:
-        await message.answer('Пользователи не найдены или возникла ошибка их извлечения',
-                             reply_markup=btn_home()
-                             )

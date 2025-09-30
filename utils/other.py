@@ -4,7 +4,7 @@ from aiogram import Bot
 from utils.bot_instance import bot
 from aiogram.fsm.state import State
 from apscheduler.jobstores.base import JobLookupError
-from database.message_object import MessageObject
+from database.objects.message_object import MessageObject
 from utils.config import r, action_orm, gpt_key,scheduler, orm_posts, orm_messages, storage, main_chat
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
@@ -140,6 +140,7 @@ async def admin_broadcast(admin_data:list[int],text:str,keyboard=btn_home) -> No
     logging.info("Сообщение с текстом:\n"
                  f"{text} отправлено {admin_count} админам")
 
+
 # Публикует пост в группу
 async def post_publication(chat_id:int,post_id) -> None:
     """
@@ -211,6 +212,7 @@ async def change_admin_message(admins_data:list,post_id: int,verdict: str) -> No
         )
 
 
+# проверка статуса пользователя в группе/канале
 async def check_member_status(bot_obj: Bot,user_id: int, group_id: int) -> bool:
     try:
 
@@ -270,7 +272,7 @@ async def post_moderation(post_text):
                               )
         return "Произошла ошибка обработки. код model-error"
 
-
+# функция отмены задачи
 def schedule_cancel(schedule_id):
     try:
         scheduler.remove_job(schedule_id)
@@ -285,8 +287,12 @@ def schedule_cancel(schedule_id):
         return False
     return True
 
-
+# проверка лимитов
 def check_limit_publication(post_count: int,limit=2):
     if post_count >= limit:
         return False
     return True
+
+# async def limit_calculation(deposit,price):
+#     result : float = deposit / price
+#     return int(result)
