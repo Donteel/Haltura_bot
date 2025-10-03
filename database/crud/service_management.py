@@ -1,7 +1,10 @@
+import logging
+
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.testing.pickleable import Order
 
-from database.base_model import ServiceModel
+from database.base_model import ServiceModel, OrdersModel
 from database.objects.service_object import ServiceObject
 from database.session_config import AsyncSessionLocal, with_session
 
@@ -46,3 +49,27 @@ class ServiceManagement:
         service = ServiceObject.model_validate(result.__dict__)
 
         return service if service else None
+
+    @with_session
+    async def create_new_order(self,
+                               session: AsyncSession,
+                               user_id,
+                               uuid,
+                               pay_method,
+                               order_amount,
+                               created_at,
+                               status):
+
+        order = OrdersModel(user_id=user_id,
+                            order_uuid=uuid,
+                            payment_method=pay_method,
+                            order_amount=order_amount,
+                            created_at=created_at,
+                            status=status)
+        try:
+            session.add(order)
+            await session.commit()
+        except Exception as e:
+            await session.rollback()
+            logging.error('error creating order', exc_info=e)
+            raise e

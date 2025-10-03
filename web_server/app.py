@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import FastAPI, Request
-
+from datetime import datetime
 from aiogram.types import ReplyKeyboardRemove
 from utils.bot_instance import bot
 from utils.config import orm_services, action_orm
@@ -37,7 +37,6 @@ async def payment_complete(request: Request):
     logging.info(f"Сервер получил уведомление {event}")
 
 
-
     text_for_admins = (f"<b>[тип уведомления] - {event}</b>\n"
                        f"<b>[статус платежа] -</b> {status}\n"
                        f"[Номер заказа] - {payment_id}\n"
@@ -67,6 +66,14 @@ async def payment_complete(request: Request):
 
             await bot.send_message(chat_id=int(user_id),
                                    text=text_for_user)
+
+            await orm_services.create_new_order(user_id=int(user_id),
+                                                uuid=payment_id,
+                                                pay_method=int(service_id),
+                                                status=event,
+                                                order_amount=amount,
+                                                created_at=datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                                                )
         case "payment.canceled":
 
             await bot.send_message(chat_id=int(user_id),

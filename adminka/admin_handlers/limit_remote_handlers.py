@@ -3,7 +3,7 @@ import logging
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 
 from utils.bot_instance import bot
 from utils.config import action_orm
@@ -106,7 +106,8 @@ async def finalization_of_limits(callback: CallbackQuery, state: FSMContext):
 
         await callback.message.edit_text(
             "<b>Действие успешно завершено.</b> Пользователь получил уведомление.\n\n"
-            f"Выдано лимитов: {value_of_limits}"
+            f"Выдано лимитов: {value_of_limits}",
+            reply_markup=None
         )
 
     await callback.answer()

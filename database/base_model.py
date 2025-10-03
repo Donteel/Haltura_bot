@@ -142,7 +142,7 @@ class PaymentMethodsModel(AbstractModel):
 class OrdersModel(AbstractModel):
     __tablename__ = 'orders'
     user_id = mapped_column(BigInteger,ForeignKey(UserModel.id, ondelete='CASCADE'), nullable=False)
-    order_id: Mapped[int] = mapped_column(nullable=False)
+    order_uuid: Mapped[int] = mapped_column(nullable=False)
     payment_method:Mapped[int] = mapped_column(ForeignKey(PaymentMethodsModel.id,ondelete='CASCADE'), nullable=False)
     status: Mapped[str] = mapped_column(nullable=False,default='pending')
     order_amount: Mapped[float] = mapped_column(nullable=False)
