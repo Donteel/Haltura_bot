@@ -13,6 +13,7 @@ class NewPost(StatesGroup):
     awaiting_finished_post = State()
     pending_confirmation = State()
 
+
 class AdminState(StatesGroup):
     awaiting_quan_limits = State()
     add_limit_state = State()
@@ -26,4 +27,9 @@ class AdminState(StatesGroup):
 
 class DeactivatePostState(StatesGroup):
     waiting_post_id = State()
+
+
+class PaymentState(StatesGroup):
+    payment_state = State()
+    awaiting_email = State()
 

@@ -82,5 +82,5 @@ async def payment_complete(request: Request):
     await admin_broadcast(
         admin_data=await action_orm.get_admins_id(),
         text=text_for_admins,
-        keyboard=ReplyKeyboardRemove
+        keyboard=None
     )
