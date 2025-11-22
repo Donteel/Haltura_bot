@@ -7,7 +7,7 @@ from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 
 from utils.bot_instance import bot
 from utils.config import action_orm
-from utils.keyboards import btn_cancel, btn_limit_act
+from utils.keyboards import btn_cancel, btn_limit_act, btn_home
 from utils.state_models import AdminState
 
 limit_router = Router()
@@ -92,7 +92,7 @@ async def finalization_of_limits(callback: CallbackQuery, state: FSMContext):
         logging.error("Произошла ошибка добавления платных лимитов пользователю",
                       e.__dict__
                       )
-        await callback.message.answer("Произошла непредвиденная ошибка, Обратитесь к администратору")
+        await callback.message.answer("Произошла непредвиденная ошибка!",reply_markup=btn_home())
         await state.clear()
     else:
         arg_for_msg = "добавил" if int(value_of_limits) > 0 else "убавил"
@@ -107,7 +107,7 @@ async def finalization_of_limits(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text(
             "<b>Действие успешно завершено.</b> Пользователь получил уведомление.\n\n"
             f"Выдано лимитов: {value_of_limits}",
-            reply_markup=None
+            reply_markup=btn_home()
         )
 
     await callback.answer()

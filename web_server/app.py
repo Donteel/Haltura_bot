@@ -62,14 +62,18 @@ async def payment_complete(request: Request):
             )
 
             text_for_user = (
-                f"✅ Платёж успешно проведён!\n\n"
-                f"💳 Сумма: {amount} {currency}\n"
-                f"🧾 Номер заказа: {payment_id}\n"
-                f"Получено: {service.quan} лимитов\n\n"
-                f"Спасибо за покупку!"
+                f"<b>✅ Платёж успешно проведён!</b>\n\n"
+                f"<b>💳 Сумма:<b> {amount} {currency}\n"
+                f"<b>🧾 Номер заказа:</b> {payment_id}\n"
+                f"<b>Получено публикаций</b>: {service.quan} \n\n"
+                f"<b>Спасибо за покупку!</b>"
             )
 
-            await bot.send_message(chat_id=int(user_id), text=text_for_user)
+            await bot.send_message(
+                chat_id=int(user_id),
+                text=text_for_user
+            )
+
 
             await orm_services.create_new_order(
                 user_id=int(user_id),

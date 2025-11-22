@@ -40,7 +40,7 @@ async def create_payment(amount: float,
                 "customer": {"email": f"{email}"},
                 "items": [{
                     "description": f"{service_data.service_name}",
-                    "quantity": f"1",
+                    "quantity": f"{service_data.quan}",
                     "amount":
                         {
                             "value": f"{float(amount):.2f}",

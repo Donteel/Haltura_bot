@@ -11,16 +11,8 @@ from utils.state_models import PaymentState
 shop_router = Router()
 
 
-@shop_router.message(Command('shop'))
-async def buy_limits_for_user(message: Message, state: FSMContext):
+# /shop см. buy_limits_for_user в handlers/user_handlers.py:127
 
-
-    await message.answer('<b>Прежде чем продолжить</b>\n'
-                         'Введите ваш Email для получения чека.\n'
-                         'Мы не сохраняем данные пользователей, вы можете не волноваться за безопасность!',
-                         reply_markup=btn_cancel())
-
-    await state.set_state(PaymentState.awaiting_email)
 
 
 @shop_router.message(F.text.regexp(r'[^@\s]+@[^@\s]+\.[^@\s]+'), PaymentState.awaiting_email)

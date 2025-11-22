@@ -55,7 +55,8 @@ async def send_broadcast(message: Message,state: FSMContext):
                 logging.error(f'Произошла ошибка {e} во время отправки сообщения пользователю')
 
         await message.answer(f'Я отправил сообщения всем пользователям.({users_count})\n'
-                             f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>')
+                             f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>',
+                             reply_markup=btn_home())
         await state.clear()
     else:
         await message.answer('Пользователи не найдены или возникла ошибка их извлечения',

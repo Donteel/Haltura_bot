@@ -20,7 +20,7 @@ from utils.keyboards import *
 from utils.bot_instance import bot
 from utils.config import scheduler, orm_posts, orm_payments
 from utils.schedule_tasks import time_zone
-from utils.state_models import NewPost, DeactivatePostState
+from utils.state_models import NewPost, DeactivatePostState, PaymentState
 from utils.config import action_orm, main_chat
 from utils.other import request_sender, post_moderation, post_publication, check_member_status
 
@@ -59,6 +59,14 @@ async def cancel_func(message: Message,state: FSMContext):
     await state.clear()
     await message.answer('Действие отменено',reply_markup=btn_home())
 
+
+@user_router.message(Command("rules"))
+@user_router.message(F.text == '📜 Правила')
+async def rules(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer('Правила публикации постов!',
+                         reply_markup=btn_rules(r'https://telegra.ph/Pravila-dlya-reklamodatelej-12-20')
+                         )
 
 @user_router.callback_query(F.data == 'subscribe')
 async def subscribe(callback: CallbackQuery):
@@ -114,6 +122,18 @@ async def create_post(message: Message,state:FSMContext):
 
     await message.answer('Введите ID сообщение полученное при публикации',reply_markup=btn_cancel())
     await state.set_state(DeactivatePostState.waiting_post_id)
+
+
+@user_router.message(Command('shop'))
+async def buy_limits_for_user(message: Message, state: FSMContext):
+
+
+    await message.answer('<b>Прежде чем продолжить</b>\n'
+                         'Введите ваш Email для получения чека.\n'
+                         'Мы не сохраняем данные пользователей, вы можете не волноваться за безопасность!',
+                         reply_markup=btn_cancel())
+
+    await state.set_state(PaymentState.awaiting_email)
 
 
 # обработчик закрытия поста
@@ -256,11 +276,3 @@ async def awaiting_post(message: Message,state:FSMContext):
                              )
 
         await state.clear()
-
-
-@user_router.message(Command("rules"))
-@user_router.message(F.text == '📜 Правила')
-async def rules(message: Message):
-    await message.answer('Правила публикации постов!',
-                         reply_markup=btn_rules(r'https://telegra.ph/Pravila-dlya-reklamodatelej-12-20')
-                         )
