@@ -105,9 +105,9 @@ async def finalization_of_limits(callback: CallbackQuery, state: FSMContext):
         )
 
         await callback.message.edit_text(
-            "<b>Действие успешно завершено.</b> Пользователь получил уведомление.\n\n"
-            f"Выдано лимитов: {value_of_limits}",
-            reply_markup=btn_home()
+            "<b>Действие успешно завершено.</b>\n"
+            "Пользователь получил уведомление.\n\n"
+            f"Выдано лимитов: {value_of_limits}"
         )
 
     await callback.answer()
