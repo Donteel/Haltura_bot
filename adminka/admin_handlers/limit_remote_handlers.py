@@ -32,7 +32,7 @@ async def add_user_post_limit(message: Message ,state: FSMContext):
     if await action_orm.get_user(int(message.text)):
 
         await message.answer(
-            "Укажи количество лимитов.",
+            "Укажи количество публикаций.",
             reply_markup=btn_limit_act(
                 recipient_id=int(message.text)
             )
@@ -54,7 +54,7 @@ async def action_menu(callback: CallbackQuery, state:FSMContext):
     user_limit = await action_orm.get_extra_limit(user_id)
 
     if ( user_limit + value) < 0:
-        await callback.answer('лимит пользователя меньше указанного значения!',show_alert=True)
+        await callback.answer('баланс пользователя меньше указанного значения!',show_alert=True)
         return
 
 
@@ -75,7 +75,7 @@ async def finalization_of_limits(callback: CallbackQuery, state: FSMContext):
 
     if value_of_limits == "0":
         await callback.message.answer(
-            "Ты должен прибавить или убавить хоть один лимит!",
+            "Ты должен прибавить или убавить хоть одну публикацию!",
             reply_markup=btn_limit_act(
                 int(user_id)
             )
@@ -107,7 +107,7 @@ async def finalization_of_limits(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text(
             "<b>Действие успешно завершено.</b>\n"
             "Пользователь получил уведомление.\n\n"
-            f"Выдано лимитов: {value_of_limits}"
+            f"Выдано публикаций: {value_of_limits}"
         )
 
     await callback.answer()
