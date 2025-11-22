@@ -64,9 +64,10 @@ async def cancel_func(message: Message,state: FSMContext):
 @user_router.message(F.text == '📜 Правила')
 async def rules(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer('Правила публикации постов!',
-                         reply_markup=btn_rules(r'https://telegra.ph/Pravila-dlya-reklamodatelej-12-20')
-                         )
+    await message.answer("<a href='https://telegra.ph/Pravila-dlya-reklamodatelej-12-20')>"
+                         "Читать...</a>",
+                         disable_web_page_preview=True,
+                         reply_markup=btn_home())
 
 @user_router.callback_query(F.data == 'subscribe')
 async def subscribe(callback: CallbackQuery):
@@ -112,7 +113,8 @@ async def create_post(message: Message,state:FSMContext):
 
         await message.answer(
             "😊 <b>У вас закончились публикации!</b> \n"
-            "Вы можете перейти в магазин по команде /shop чтобы купить публикации.")
+            "Вы можете перейти в магазин по команде /shop чтобы купить публикации.",
+        reply_markup=btn_home())
 
         await state.clear()
 
@@ -120,7 +122,9 @@ async def create_post(message: Message,state:FSMContext):
 @user_router.message(F.text == '❌ Закрыть вакансию')
 async def create_post(message: Message,state:FSMContext):
 
-    await message.answer('Введите ID сообщение полученное при публикации',reply_markup=btn_cancel())
+    await message.answer('Введите ID сообщение полученное при публикации',
+                         reply_markup=btn_cancel()
+                         )
     await state.set_state(DeactivatePostState.waiting_post_id)
 
 
