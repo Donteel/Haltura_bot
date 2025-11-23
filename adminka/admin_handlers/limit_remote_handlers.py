@@ -3,7 +3,7 @@ import logging
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
+from aiogram.types import Message, CallbackQuery
 
 from utils.bot_instance import bot
 from utils.config import action_orm

@@ -19,7 +19,7 @@ load_dotenv()
 storage = RedisStorage.from_url(os.getenv("REDIS_URL"),state_ttl=3600)
 
 bot_token = os.getenv('BOT_TOKEN')
-admin_token = os.getenv('ADMIN_TOKEN')
+
 
 gpt_key = os.getenv('AI_API_KEY')
 main_chat = os.getenv('CHANNEL_ID')

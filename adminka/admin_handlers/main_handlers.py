@@ -1,11 +1,9 @@
-from aiogram.exceptions import TelegramMigrateToChat
 from aiogram.filters import Command
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram import Router
 from aiogram import F
 
-from handlers.user_handlers import cancel_func
 from middlewares.add_user_middleware import AddUserMiddleware
 
 main_router = Router()
