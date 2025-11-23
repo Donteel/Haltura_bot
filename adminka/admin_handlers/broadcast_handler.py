@@ -54,6 +54,10 @@ async def send_broadcast(message: Message,state: FSMContext):
 
                 logging.error(f'Произошла ошибка {e} во время отправки сообщения пользователю')
 
+            except aiogram.exceptions.TelegramBadRequest as e:
+                blocked_count += 1
+                logging.error(f"ошибка отправки сообщения пользователю {user_id}")
+
         await message.answer(f'Я отправил сообщения всем пользователям.({users_count})\n'
                              f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>',
                              reply_markup=btn_home())
