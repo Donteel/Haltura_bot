@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from adminka.admin_handlers import main_handlers, broadcast_handler, limit_remote_handlers
+from admin_handlers import main_handlers, broadcast_handler, limit_remote_handlers
 from adminka.ad_utils.bot_instance import dp,bot
 from database.base_model import create_tables
 
