@@ -1,7 +1,7 @@
 import aiogram
 from aiogram.exceptions import TelegramMigrateToChat
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram import Router
 from aiogram import F
@@ -33,7 +33,7 @@ async def broadcast(message: Message,state: FSMContext):
                              )
         await state.set_state(AdminState.waiting_for_broadcast_ms)
     else:
-        await message.answer('Вам не доступна эта команда.',reply_markup=btn_home())
+        await message.answer('Вам не доступна эта команда.',reply_markup=ReplyKeyboardRemove())
 
 
 # исполнение рассылки
@@ -62,9 +62,9 @@ async def send_broadcast(message: Message,state: FSMContext):
 
         await message.answer(f'Я отправил сообщения всем пользователям.({users_count})\n'
                              f'Кстати, вот количество пользователей которые заблокировали бота - <b>{blocked_count}</b>',
-                             reply_markup=btn_home())
+                             reply_markup=ReplyKeyboardRemove())
         await state.clear()
     else:
         await message.answer('Пользователи не найдены или возникла ошибка их извлечения',
-                             reply_markup=btn_home()
+                             reply_markup=ReplyKeyboardRemove()
                              )
