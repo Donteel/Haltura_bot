@@ -7,6 +7,7 @@ from aiogram import Router
 from aiogram import F
 
 from middlewares.add_user_middleware import AddUserMiddleware
+from utils.bot_instance import bot
 
 from utils.keyboards import *
 from utils.state_models import AdminState
@@ -45,7 +46,8 @@ async def send_broadcast(message: Message,state: FSMContext):
         for user_id in all_users:
             try:
                 if int(user_id) != message.from_user.id:
-                    await message.bot.send_message(text=message.text,
+                    # !bot импортирован из модуля пользовательского бота, а не админки
+                    await bot.send_message(text=message.text,
                                                    chat_id=int(user_id)
                                                    )
                     users_count += 1
