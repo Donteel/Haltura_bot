@@ -150,10 +150,12 @@ async def post_publication(chat_id:int,post_id) -> None:
     :return: None
     """
     post_data = await orm_posts.get_post(post_id)
+    user_data = await action_orm.get_user(int(post_data.user_id))
     try:
         # отправляем вакансию в канал
         message_obj = await bot.send_message(
-            text=f"{post_data.post_text}",
+            text=f"{post_data.post_text}\n\n"
+                 f"📆 В системе с: {user_data.created_at.strftime("%d.%m.%Y")}",
             chat_id=int(chat_id)
         )
 

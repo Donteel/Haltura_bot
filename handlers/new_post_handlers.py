@@ -153,7 +153,7 @@ async def awaiting_contacts(message: Message,state: FSMContext):
 
     await state.set_state(NewPost.pending_confirmation)
 
-# Подтверждение оплаты
+# Подтверждение поста
 @create_post_router.message(NewPost.pending_confirmation,F.text == "✅ Подтвердить")
 async def awaiting_pending_confirmation(message: Message,state: FSMContext):
 

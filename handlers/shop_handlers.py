@@ -11,7 +11,7 @@ from utils.state_models import PaymentState
 shop_router = Router()
 
 
-# /shop см. buy_limits_for_user в handlers/user_handlers.py:127
+# /shop см. buy_limits_for_user в handlers/user_handlers.py:131
 
 
 

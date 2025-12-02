@@ -46,12 +46,12 @@ class UserManagementBase:
 
 
     @with_session
-    async def get_user(self,session: AsyncSession,tg_id):
+    async def get_user(self,session: AsyncSession,tg_id:int):
 
         stmt = await session.execute(select(UserModel).where(UserModel.id==tg_id))
         result = stmt.scalar_one_or_none()
         if result:
-            return result
+            return UserObject.model_validate(result.__dict__)
         else:
             return False
 

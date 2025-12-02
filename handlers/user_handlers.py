@@ -197,14 +197,14 @@ async def awaiting_post(message: Message,state:FSMContext):
     await message.answer('Сейчас я проверю твою вакансию...')
 
     username = message.from_user.username or "Неизвестно"
-    admin_data = await action_orm.get_admins_id()
+    # admin_data = await action_orm.get_admins_id()
     user_data = await state.get_data()
     post_text = user_data.get('post_text',message.text)
     moderation_result = await post_moderation(post_text)
 
     if moderation_result == "pass":
 
-        # создать  запись в бд
+        # создать запись в бд
         post_id = await orm_posts.create_new_post(user_id=message.chat.id,
                                                    username=username,
                                                    post_text=post_text
