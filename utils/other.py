@@ -49,7 +49,7 @@ async def channel_message(message_text):
         post_id = int(r.get('message_id').decode('utf-8'))
         logging.info(f'Получен ID старого сообщения - {post_id}')
 
-        await delete_message(chat_id=main_chat,id_message=post_id)
+        await delete_message(chat_id=main_chat,id_message=int(post_id))
 
     try:
         logging.info('Попытка отправки нового сообщения в группу')

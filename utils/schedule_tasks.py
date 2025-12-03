@@ -1,4 +1,5 @@
 from apscheduler.triggers.cron import CronTrigger
+# from apscheduler.triggers.interval import IntervalTrigger
 from utils.other import channel_message
 from utils.config import scheduler
 import zoneinfo
@@ -14,3 +15,13 @@ scheduler.add_job(
           ' бесплатно через нашего Telegram-бота! 🎯',
           )
 )
+
+# Публикация рекламы бота тест
+# scheduler.add_job(
+#     channel_message,
+#     IntervalTrigger(minutes=2, timezone=time_zone),
+#     args=('<b>💼 Ищете сотрудников?</b>\n'
+#           'Вы можете опубликовать свою вакансию'
+#           ' бесплатно через нашего Telegram-бота! 🎯',
+#           )
+# )
