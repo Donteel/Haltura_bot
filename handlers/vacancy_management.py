@@ -154,40 +154,49 @@ async def cancel_posting(callback: CallbackQuery,state: FSMContext):
 async def cancel_posting_and_block(callback: CallbackQuery,state: FSMContext):
 
     callback_text, post_id = callback.data.split('_')
+
     post = await orm_posts.get_post(int(post_id))
 
-    try:
+    admins_data = await action_orm.get_admins_id()
 
-        admins_data = await action_orm.get_admins_id()
+    # добавляем пользователя в чс
+    await action_orm.add_to_blacklist(post.user_id)
+
+    logging.info('Пользователь добавлен в чс')
+
+    await bot.send_message(text='<b>Вы добавлены в черный список!</b>\n'
+                                'Спасибо что были с нами!',
+                           chat_id=post.user_id,
+                           reply_markup=ReplyKeyboardRemove()
+                           )
 
 
-        await action_orm.add_to_blacklist(post.user_id)
+    # пробуем удалить задачу если она существует
 
-        await bot.send_message(text='<b>Вы добавлены в черный список!</b>\n'
-                                    'Спасибо что были с нами!',
-                               chat_id=post.user_id,
-                               reply_markup=ReplyKeyboardRemove()
+    if schedule_cancel(post.job_id):
+        logging.info("Задача на публикацию вакансии отменена")
+
+    else:
+
+        logging.info("Задача на публикацию отсутствует")
+
+
+        # пробуем удалить пост с канала
+        try:
+            await bot.delete_message(chat_id=main_chat,message_id=int(post.message_id))
+
+            logging.info("пост пользователя удален с канала")
+
+            await callback.message.answer('Вакансия пользователя удалена с канала')
+
+        except Exception as e:
+            logging.info("пост пользователя не удален с канала", exc_info=e)
+
+    await change_admin_message(admins_data=admins_data,
+                               post_id=int(post_id),
+                               verdict=callback_text
                                )
-
-        await orm_posts.remove_post(int(post_id))
-
-        logging.info("попытка удаления задачи на публикацию.")
-        if schedule_cancel(post.job_id):
-            logging.info("Публикация пользователя отменена")
-        else:
-            logging.info("Публикация уже опубликована или отменена ранее")
-            await callback.message.answer('Публикация уже опубликована или отменена ранее, '
-                                          'пользователь заблокирован!')
-
-        await change_admin_message(admins_data=admins_data,
-                                   post_id=int(post_id),
-                                   verdict=callback_text
-                                   )
-        await state.clear()
-
-    except Exception as e:
-        await callback.answer(f" ошибка действия - {e}")
-    await callback.answer()
+    await state.clear()
 
 
 @vacancy_router.callback_query(F.data.startswith('delAndBlock'))
